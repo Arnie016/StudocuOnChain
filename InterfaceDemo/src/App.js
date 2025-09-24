@@ -94,7 +94,7 @@ export default function App() {
             setBalance(bal);
             setIsConnected(true);
 
-            navigate("/InterfaceDemo/profile")
+            navigate("/InterfaceDemo/profile");
         }
         catch (error){
             setIsConnected(false);
@@ -240,7 +240,7 @@ export default function App() {
             setElected(true)
         });
         return () => {
-        contract_2.removeAllListeners("Leader_chosen")
+            contract_2.removeAllListeners("leader_elected")
         };
     },[contract_2]);
 
@@ -249,7 +249,7 @@ export default function App() {
             setRevealOn(true)
         });
         return () => {
-        contract_2.removeAllListeners("reveal_on")
+            contract_2.removeAllListeners("reveal_on")
         };
     },[contract_2]);
 
@@ -261,7 +261,7 @@ export default function App() {
             setElected(false)
         });
         return () => {
-        contract_2.removeAllListeners("reset_done")
+            contract_2.removeAllListeners("reset_done")
         };
     },[contract_2]);
 

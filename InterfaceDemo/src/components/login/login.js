@@ -42,7 +42,7 @@ export default function Login(props){
             <img src = {logo} className = "login-logo" alt = "logo" />
             <h2>
                 25-26 Sem 1 EE4032 <br/>
-                Project Interface Demo With Leader 4
+                Project Interface Demo With Leader
                 <br/>
                 <span className = "login-author">
                     Developed by: Yan Ge, Enrique Cervero and Tristan Philippe
