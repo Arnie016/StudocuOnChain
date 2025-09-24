@@ -43,7 +43,7 @@ export default function Profile(props){
             {
                 props.isConnected ?
                 <ProfilePage />:
-                <Navigate to = '/EE4032/InterfaceDemo' />
+                <Navigate to = '/InterfaceDemo' />
             }
         </div>
     )

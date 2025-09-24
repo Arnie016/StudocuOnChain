@@ -103,7 +103,7 @@ export default function Storage(props){
             {
                 props.isConnected ?
                 <StoragePage />:
-                <Navigate to = '/EE4032/InterfaceDemo' />
+                <Navigate to = '/InterfaceDemo' />
             }
         </div>
     )

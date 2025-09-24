@@ -41,11 +41,11 @@ export default function Login(props){
         <div className = "login">
             <img src = {logo} className = "login-logo" alt = "logo" />
             <h2>
-                23-24 Sem 1 EE4032 <br/>
-                Project Interface Demo
+                25-26 Sem 1 EE4032 <br/>
+                Project Interface Demo With Leader
                 <br/>
                 <span className = "login-author">
-                    Developed by: Yan Ge
+                    Developed by: Yan Ge, Enrique Cervero and Tristan Philippe
                 </span>
             </h2>
             {

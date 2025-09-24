@@ -1,6 +1,6 @@
 import {Routes, Route} from "react-router-dom";
 import {useNavigate} from "react-router-dom";
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {ethers} from 'ethers';
 import Web3 from "web3";
 
@@ -9,7 +9,10 @@ import Login from "./components/login/login";
 import Profile from "./components/profile/profile";
 import Storage from "./components/storage/storage";
 import History from "./components/history/history";
+import Leader from "./components/leader/leader";
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./contracts/config";
+import { CONTRACT_ABI_2, CONTRACT_ADDRESS_2 } from "./contracts/config_2";
+
 
 export default function App() {
     const [haveMetamask, setHaveMetamask] = useState(true);     // check if the browser has MetaMask installed. 
@@ -25,13 +28,27 @@ export default function App() {
 
     const [historyRecord, setHistoryRecord] = useState(null);   // record of history operations. 
     const [recordLen, setRecordLen] = useState(0);              // length of record. 
-    const maxRecordLen = 50;                                    // maximum length of record list. 
+    const maxRecordLen = 50;                                    // maximum length of record list.                        
 
+    const [commitPending, setCommitPending] = useState(false);
+    const [commitDone, setCommitDone] = useState(false);
+    const [revealPending, setRevealPending] = useState(false);
+    const [revealAccepted, setRevealAccepted] = useState(false);
+    const [resetDone, setResetDone] = useState(false);
+    const [showLead, setShowLead] = useState("0x0000000000000000000000000000000000000000");
+    const [electionOn, setElectionOn] = useState(false);
+    const [revealOn, setRevealOn] =useState(false);
+    const [elected, setElected] = useState(false)
+
+
+    
     const navigate = useNavigate();
     const {ethereum} = window;
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
+    const web3 = new Web3(window.ethereum || "http://localhost:8545");
     const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+    const contract_2 = new web3.eth.Contract(CONTRACT_ABI_2, CONTRACT_ADDRESS_2);
+
 
     // useEffect(() => {
     //     const { ethereum } = window;
@@ -97,7 +114,7 @@ export default function App() {
         return res;
     }
 
-
+    
 ////// history recording. 
     const RecordOverFlow = () => {
         if (recordLen > maxRecordLen){
@@ -159,7 +176,99 @@ export default function App() {
         }
     }
 
+////// Leader election
+    const commitValUpdate = async () => {
+        const commitVal = document.getElementById("CommitVal").value;
+        setCommitPending(true);
+        setCommitDone(false);
+        setResetDone(false);
 
+        if (commitVal.length !== 0){
+            setElectionOn(true);
+            const [bit,key] = commitVal.split(",").map(Number);
+            try {
+                let res = await contract_2.methods.Commit(bit,key).send({from : address});
+                setCommitDone(true);
+            }   
+            catch(err){
+                setCommitDone(false);
+                console.log('error Commit');
+            }
+        }
+        else {
+            console.log('No entry')
+        }
+        setCommitPending(false);
+
+    }
+
+    const revealVal = async () => {
+        const revealVal = document.getElementById('RevealVal').value;
+        setRevealAccepted(false);
+        setRevealPending(true);
+
+        if (revealVal.length !== 0){
+            setRevealPending(true)
+            let [bit,key] = await revealVal.split(",").map(Number);
+            try {
+                let res = await contract_2.methods.Reveal(bit,key).send({from : address});
+                setRevealAccepted(true);
+            }   
+            catch(err){
+                setRevealAccepted(false);
+                console.log('error Reveal');
+            }
+        }
+        else {
+            console.log('No entry');
+        }
+        setRevealPending(false)
+    }
+
+    const resetHandle = async () => {
+        try{
+            let res = await contract_2.methods.election_reset().send({from : address});
+            setElectionOn(false)
+            setRevealOn(false)
+            setElected(false)
+        }
+        catch{
+        }
+    }
+    useEffect(()=>{
+        contract_2.events.leader_elected().on("data",() =>{
+            setElected(true)
+        });
+        return () => {
+        contract_2.removeAllListeners("Leader_chosen")
+        };
+    },[contract_2]);
+
+    useEffect(()=>{
+        contract_2.events.reveal_on().on("data",() =>{
+            setRevealOn(true)
+        });
+        return () => {
+        contract_2.removeAllListeners("reveal_on")
+        };
+    },[contract_2]);
+
+    useEffect(()=>{
+        contract_2.events.reset_done().on("data",() =>{
+            setResetDone(true)
+            setElectionOn(false)
+            setRevealOn(false)
+            setElected(false)
+        });
+        return () => {
+        contract_2.removeAllListeners("reset_done")
+        };
+    },[contract_2]);
+
+    const getLeader = async () => {
+        let res = await contract_2.methods.get_leader().call();
+        return res;
+    }
 ////// store and get value. 
     const storedValUpdate = async () => {
         const inputVal = document.getElementById('inputVal').value;
@@ -192,6 +301,11 @@ export default function App() {
 
         setShowVal(ans);
         RecordPush('get', ans);
+    }
+
+    const showLeaderUpdate = async () => {
+        let ans = await getLeader();
+        setShowLead(ans);
     }
 
 
@@ -230,15 +344,37 @@ export default function App() {
         )
     }
 
+    const LeaderDisplay = () =>{
+        return(
+            <Leader
+                isConnected = {isConnected}
+                commitValHandle = {commitValUpdate}
+                showLeader = {showLead}
+                commitDone = {commitDone}
+                commitPending = {commitPending}
+                revealVal = {revealVal}
+                revealPending = {revealPending}
+                revealAccepted = {revealAccepted}
+                showLeaderHandle = {showLeaderUpdate}
+                resetHandle = {resetHandle}
+                resetDone = {resetDone}
+                electionOn = {electionOn}
+                revealOn = {revealOn}
+                elected = {elected}
+            />
+        )
+    }
+
 
     return (
         // <BrowserRouter>
             <div className="App">
                 <Routes>
-                    <Route path = "/EE4032/InterfaceDemo" element = {<Login isHaveMetamask = {haveMetamask} connectTo = {connectWallet} />}></Route>
+                    <Route path = "/github.io" element = {<Login isHaveMetamask = {haveMetamask} connectTo = {connectWallet} />}></Route>
                     <Route path = "/InterfaceDemo/profile" element = {<ProfileDisplay/>}></Route>
                     <Route path = "/InterfaceDemo/storage" element = {<StorageDisplay/>}></Route>
                     <Route path = "/InterfaceDemo/history" element = {<HistoryDisplay/>}></Route>
+                    <Route path = "/InterfaceDemo/leader" element = {<LeaderDisplay/>}></Route>
                 </Routes>
             </div>
         // </BrowserRouter>
