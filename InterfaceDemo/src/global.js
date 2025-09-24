@@ -12,7 +12,7 @@ export const TopbarColor = '#61dafb';
 export const GlobalToolBar = () => {
     return (
         <div className = "global-toolbar">
-            <Link to = "/github.io">Login</Link>
+            <Link to = "/EE4032">Login</Link>
             &nbsp;|&nbsp;
             <Link to = "/InterfaceDemo/profile">Profile</Link>
             &nbsp;|&nbsp;
