@@ -33,6 +33,8 @@ This part gives the steps to clone the [demo code](https://github.com/marcotom/E
     ![demo-login](https://i.postimg.cc/hjrpTG1t/demo-login.png)
   - Now you can design your own application based on the framework of this demo! 
 
+  - It is important to verify the dependencies of the code you are using. If you use the ```src``` file of the demo, and then use it in your own project, some dependencies might be outdated and your project might be working on your own website but not when you include it in the demo code. The file ```package.json``` and  ```package-lock.json``` contain those dependencies. You might need to update it in your project folder. To do this, start a command prompt and go to the repository of the demo and then type  ```npm i```. This will install all the required dependencies based on your project.
+
 
 ### Structure of the demo
 This part introduces the key points of code structure of the demo. 
