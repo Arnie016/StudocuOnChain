@@ -1,7 +1,7 @@
 
 # 05. Project Demo
 
-Now that you have gone through all steps of preparation, and you can start working on your project. But in order to reduce your workload, the source code of the [project demo](https://marcotom.github.io/EE4032/InterfaceDemo/) is provided [here](https://github.com/marcotom/EE4032/tree/main/InterfaceDemo). As many key points of the application have already been implemented in the demo such as connecting the Dapp to MetaMask, you can design your application based on the demo code instead of building a web page from zero. 
+Now that you have gone through all steps of preparation, and you can start working on your project. But in order to reduce your workload, the source code of the [project demo](https://marcotom.github.io/EE4032) is provided [here](https://github.com/marcotom/EE4032/tree/main/InterfaceDemo). As many key points of the application have already been implemented in the demo such as connecting the Dapp to MetaMask, you can design your application based on the demo code instead of building a web page from zero. 
 
 This instruction describes the structure of the [project demo](https://github.com/marcotom/EE4032/tree/main/InterfaceDemo), and how to work on your own project based on the demo. 
 
@@ -47,11 +47,11 @@ This part introduces the key points of code structure of the demo.
   - ```src/App.js``` defines the main function of the application and connects all pages together. ```src/App.css``` defines styles in ```src/App.js```. 
   - For all other files that are not mentioned above, you can just leave them as they are. 
   
-- Four pages are included in this demo, namely ```login```, ```profile```, ```storage``` and ```history```. 
+- Five pages are included in this demo, namely ```login```, ```profile```, ```storage``` , ```history``` and ```leader election```. 
   - The url of each page is indicated in ```src/App.js```:
   ![demo-router](https://i.postimg.cc/nL9dMTsm/demo-router.png)
-  - These pages are defined in the ```src/component/``` folder, i.e. four sub-folders named ```login```, ```profile```, ```storage``` and ```history```. In every sub-folder, there is one ```.js``` file and one ```.css``` file defining the layout and style of the page. 
-  - The ```src/component/storage``` folder contains files that define the functionality of this application. Your work will mainly be focused on this part. 
+  - These pages are defined in the ```src/component/``` folder, i.e. five sub-folders named ```login```, ```profile```, ```storage``` , ```history``` and ```leader```. In every sub-folder, there is one ```.js``` file and one ```.css``` file defining the layout and style of the page. 
+  - The ```src/component/storage``` folder contains files that define the storage and history functionality of this application. The ```src/component/leader``` contains files that define the leader election functionality. Your work will mainly be focused on these part. 
 
 - Interact with solidity contracts in React
   - To integrate your solidity contract into your React project, put the contracts in ```src/contracts``` folder. 
