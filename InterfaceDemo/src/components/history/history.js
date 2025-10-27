@@ -5,6 +5,7 @@ import "../../global.css";
 import { GlobalToolBar } from "../../global";
 
 export default function History(props){
+    const { toolbarProps = {} } = props;
     const displayNum = 8;
     const records = Array.isArray(props.recordList) ? props.recordList.slice(1) : [];
     const filteredRecords = records.filter(Boolean);
@@ -16,14 +17,28 @@ export default function History(props){
         2: { label: 'Rejected', className: 'status-chip--danger' }
     };
 
+    const operationMap = {
+        store: 'Storage · store',
+        get: 'Storage · get',
+        'studocu-register': 'Studocu · register',
+        'studocu-upload': 'Studocu · upload',
+        'studocu-vote': 'Studocu · vote',
+        'studocu-access': 'Studocu · access'
+    };
+
     const renderStatus = (status) => {
         const cfg = statusMap[status] || { label: 'Unknown', className: 'status-chip--neutral' };
         return <span className={`status-chip ${cfg.className}`}>{cfg.label}</span>;
     };
 
+    const resolveOperation = (operation) => operationMap[operation] || operation;
+
     const HistoryPage = () => (
         <div className="page history-page">
-            <GlobalToolBar />
+            <GlobalToolBar
+                {...toolbarProps}
+                isConnected={toolbarProps.isConnected}
+            />
             <section className="page-section">
                 <div className="section-heading">
                     <p className="eyebrow">Recent activity</p>
@@ -53,7 +68,7 @@ export default function History(props){
                                 <div className="history-row" key={`${record.id}-${record.operation}`}>
                                     <span>{record.id}</span>
                                     <span className="history-cell history-cell--address">{record.address}</span>
-                                    <span className="history-cell history-cell--operation">{record.operation}</span>
+                                    <span className="history-cell history-cell--operation">{resolveOperation(record.operation)}</span>
                                     <span>{record.value?.toString() || '—'}</span>
                                     <span>{record.cost?.toString() || '—'}</span>
                                     <span>{renderStatus(record.status)}</span>
@@ -66,5 +81,5 @@ export default function History(props){
         </div>
     );
 
-    return props.isConnected ? <HistoryPage /> : <Navigate to='/InterfaceDemo' />;
+    return props.isConnected ? <HistoryPage /> : <Navigate to='/' />;
 }

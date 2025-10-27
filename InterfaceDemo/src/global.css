@@ -271,6 +271,7 @@ input::placeholder {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1.5rem;
     background: rgba(5, 8, 30, 0.65);
     border-radius: 999px;
     padding: 0.75rem 1.8rem;
@@ -289,7 +290,8 @@ input::placeholder {
 }
 
 .global-nav__brand,
-.global-nav__links {
+.global-nav__links,
+.global-nav__status {
     position: relative;
     z-index: 1;
 }
@@ -337,6 +339,64 @@ input::placeholder {
     gap: 0.4rem;
 }
 
+.global-nav__status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.global-nav__status-line {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    font-weight: 500;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--warning);
+    box-shadow: 0 0 10px rgba(255, 215, 103, 0.6);
+}
+
+.status-indicator.is-online {
+    background: var(--success);
+    box-shadow: 0 0 10px rgba(99, 246, 165, 0.55);
+}
+
+.status-indicator.is-offline {
+    background: var(--danger);
+    box-shadow: 0 0 10px rgba(255, 123, 153, 0.55);
+}
+
+.global-nav__status-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.global-nav__pill {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+}
+
+.global-nav__pill--address {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    letter-spacing: 0.08em;
+}
+
+.global-nav__connect {
+    padding: 0.6rem 1.4rem;
+    white-space: nowrap;
+}
+
 .global-nav__link {
     padding: 0.5rem 1.1rem;
     border-radius: 999px;
@@ -362,12 +422,32 @@ input::placeholder {
     .global-nav {
         flex-direction: column;
         border-radius: var(--radius-lg);
-        align-items: flex-start;
-        gap: 0.9rem;
+        align-items: stretch;
+        gap: 1rem;
+        padding: 1rem 1.4rem;
     }
 
     .global-nav__links {
         flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .global-nav__status {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+        margin-left: 0;
+    }
+
+    .global-nav__status-meta {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .global-nav__connect {
+        width: 100%;
+        text-align: center;
     }
 }
 

@@ -6,11 +6,14 @@ import { GlobalToolBar } from "../../global";
 import METAMASK from '../../images/METAMASK.png';
 
 export default function Profile(props){
-    const { address, networkType, balance, isConnected } = props;
+    const { address, networkType, balance, isConnected, toolbarProps = {} } = props;
 
     const ProfilePage = () => (
         <div className="page profile-page">
-            <GlobalToolBar />
+            <GlobalToolBar
+                {...toolbarProps}
+                isConnected={toolbarProps.isConnected}
+            />
             <section className="page-section">
                 <div className="section-heading">
                     <p className="eyebrow">Wallet overview</p>
@@ -75,5 +78,5 @@ export default function Profile(props){
         </div>
     );
 
-    return isConnected ? <ProfilePage /> : <Navigate to='/InterfaceDemo' />;
+    return isConnected ? <ProfilePage /> : <Navigate to='/' />;
 }

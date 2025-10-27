@@ -19,7 +19,8 @@ export default function Leader(props){
         resetDone,
         electionOn,
         revealOn,
-        elected
+        elected,
+        toolbarProps = {}
     } = props;
 
     const leaderStatus = elected
@@ -48,7 +49,10 @@ export default function Leader(props){
 
     const LeaderPage = () => (
         <div className="page leader-page">
-            <GlobalToolBar />
+            <GlobalToolBar
+                {...toolbarProps}
+                isConnected={toolbarProps.isConnected}
+            />
             <section className="page-section">
                 <div className="section-heading">
                     <p className="eyebrow">Commit &amp; reveal</p>
@@ -105,5 +109,5 @@ export default function Leader(props){
         </div>
     );
 
-    return isConnected ? <LeaderPage /> : <Navigate to='/InterfaceDemo' />;
+    return isConnected ? <LeaderPage /> : <Navigate to='/' />;
 }

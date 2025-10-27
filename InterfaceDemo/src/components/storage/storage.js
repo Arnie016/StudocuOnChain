@@ -5,6 +5,7 @@ import "../../global.css";
 import { GlobalToolBar } from "../../global";
 
 export default function Storage(props){
+    const { toolbarProps = {} } = props;
     const renderStoreStatus = () => {
         if (props.storedPending) {
             return <span className="status-chip status-chip--pending">Transaction pending</span>;
@@ -17,7 +18,10 @@ export default function Storage(props){
 
     const StoragePage = () => (
         <div className="page storage-page">
-            <GlobalToolBar />
+            <GlobalToolBar
+                {...toolbarProps}
+                isConnected={toolbarProps.isConnected}
+            />
             <section className="page-section">
                 <div className="section-heading">
                     <p className="eyebrow">SimpleStorage contract</p>
@@ -66,5 +70,5 @@ export default function Storage(props){
         </div>
     );
 
-    return props.isConnected ? <StoragePage /> : <Navigate to='/InterfaceDemo' />;
+    return props.isConnected ? <StoragePage /> : <Navigate to='/' />;
 }

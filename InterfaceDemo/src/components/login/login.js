@@ -4,16 +4,36 @@ import { GlobalToolBar } from '../../global';
 import logo from '../../images/logo.svg';
 
 export default function Login(props){
-    const hasMetamask = props.isHaveMetamask;
+    const {
+        isHaveMetamask: hasMetamask,
+        isConnecting,
+        connectError,
+        connectTo,
+        toolbarProps = {}
+    } = props;
 
-    const statusLabel = hasMetamask ? 'MetaMask detected' : 'MetaMask not found';
-    const statusBody = hasMetamask
-        ? 'Connect your wallet to unlock the on-chain playground.'
-        : 'Install the MetaMask extension to begin interacting with the contracts.';
+    const statusLabel = hasMetamask
+        ? (isConnecting ? 'Connecting to MetaMask...' : 'MetaMask detected')
+        : 'MetaMask not found';
+    const statusBody = (() => {
+        if (!hasMetamask) {
+            return 'Install the MetaMask extension to begin interacting with the contracts.';
+        }
+        if (isConnecting) {
+            return 'Approve the connection request in your wallet to continue.';
+        }
+        return 'Connect your wallet to unlock the on-chain playground.';
+    })();
 
     return (
         <div className="page login-page page--centered">
-            <GlobalToolBar />
+            <GlobalToolBar
+                {...toolbarProps}
+                isConnected={toolbarProps.isConnected}
+                onConnect={toolbarProps.onConnect || connectTo}
+                isConnecting={isConnecting}
+                hasMetamask={hasMetamask}
+            />
             <section className="page-section login-section">
                 <div className="split-layout login-layout">
                     <div className="glass-panel login-hero">
@@ -31,10 +51,10 @@ export default function Login(props){
                         <div className="login-actions">
                             <button
                                 className="btn btn--primary"
-                                onClick={props.connectTo}
-                                disabled={!hasMetamask}
+                                onClick={connectTo}
+                                disabled={!hasMetamask || isConnecting}
                             >
-                                {hasMetamask ? 'Connect MetaMask' : 'Install MetaMask first'}
+                                {hasMetamask ? (isConnecting ? 'Connecting...' : 'Connect MetaMask') : 'Install MetaMask first'}
                             </button>
                             <a
                                 className="btn btn--ghost login-doc-btn"
@@ -58,10 +78,11 @@ export default function Login(props){
                         <h2>{statusLabel}</h2>
                         <p>{statusBody}</p>
                         {
-                            hasMetamask ?
-                            <div className="status-chip status-chip--success">
-                                Ready to connect
-                            </div> :
+                            hasMetamask ? (
+                                isConnecting ?
+                                    <div className="status-chip status-chip--pending">Awaiting confirmation</div> :
+                                    <div className="status-chip status-chip--success">Ready to connect</div>
+                            ) :
                             <div className="status-chip status-chip--danger">
                                 Action required
                             </div>
@@ -69,12 +90,21 @@ export default function Login(props){
                         <div className="login-status__tip">
                             {hasMetamask ?
                                 <p>
-                                    Use the connect button to link your browser wallet and continue to the profile page.
+                                    {isConnecting
+                                        ? 'Approve the prompt in MetaMask. We will take you to the profile page once connected.'
+                                        : 'Use the connect button to link your browser wallet and continue to the profile page.'}
                                 </p> :
                                 <p>
                                     Refresh this page after installing MetaMask to continue. We recommend Chrome or Brave.
                                 </p>
                             }
+                        </div>
+                        <div className="login-status__tip">
+                            {connectError && (
+                                <div className="status-chip status-chip--danger">
+                                    {connectError}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
