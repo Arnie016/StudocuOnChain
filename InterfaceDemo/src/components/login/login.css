@@ -1,44 +1,99 @@
 @import "../../global.css";
 
-.login{
-    text-align: center;
-    background-color: var(--BackgroundCovered);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: var(--MessageColorCovered);
+.login-page {
+    padding-top: 3rem;
 }
 
-.login-author{
-    text-align: center;
-    font-size: 20px;
-    font-weight: normal;
+.login-section {
+    width: min(1200px, 100%);
 }
 
-.login-highlight{
-    color: var(--HighlightColor);
+.login-layout {
+    align-items: stretch;
 }
 
-.login-logo{
-    height: 40vmin;
+.login-hero {
+    position: relative;
+    overflow: hidden;
+}
+
+.login-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(63, 200, 255, 0.25), transparent 40%);
     pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .login-logo {
-      animation: login-logo-spin infinite 20s linear;
-    }
+.login-hero > * {
+    position: relative;
+    z-index: 1;
 }
 
-@keyframes login-logo-spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-}  
+.login-subtitle {
+    color: var(--text-soft);
+    font-size: 1.05rem;
+    margin-top: 0.75rem;
+}
 
+.login-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    margin-top: 1.75rem;
+}
+
+.login-doc-btn {
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.login-footer {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    color: var(--text-muted);
+}
+
+.login-badges {
+    display: inline-flex;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+}
+
+.login-logo {
+    width: 96px;
+    height: 96px;
+    border-radius: 28px;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.login-status {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.login-status__tip {
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+    .login-actions {
+        flex-direction: column;
+    }
+
+    .login-logo {
+        align-self: center;
+    }
+}

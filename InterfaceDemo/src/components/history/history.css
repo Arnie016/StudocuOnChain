@@ -1,132 +1,86 @@
 @import "../../global.css";
 
-.history-background{
-    text-align: center;
-    background-color: var(--BackgroundUncovered);
-    min-height: 100vh;
-    width: 100%;
+.history-page {
+    padding-top: 3rem;
+}
+
+.history-table {
+    display: flex;
     flex-direction: column;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    gap: 1rem;
 }
 
-.history{
-    text-align: center;
-    background-color: var(--BackgroundUncovered);
-    width: 80%;
+.history-table__head,
+.history-row {
+    display: grid;
+    grid-template-columns: 60px 1.8fr 1fr 1fr 1fr 1.1fr;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.history-table__head {
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.history-row {
+    padding: 0.8rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.history-row span {
+    word-break: break-all;
+}
+
+.history-cell--address {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+}
+
+.history-cell--operation {
+    text-transform: capitalize;
+}
+
+.history-table__body {
+    display: flex;
     flex-direction: column;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    padding-top: 50px;
-    padding-bottom: 50px;
 }
 
-.history-menuFramework{
-    width: 100%;
-    flex-direction: column;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.history-menu{
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.history-element{
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.history-elementInner{
-    width: 100%;
-    display: flex;
-    padding-top: 5px;
-    align-items: center;
-    justify-content: center;
-}
-
-
-.history-listNumber{
-    font-size: 20px;
-    width: 5%;
+.history-empty {
     text-align: center;
-    color: var(--MessageColorUncovered);
-    background-color: var(--BackgroundMasked);
+    padding: 2rem 1rem;
+    color: var(--text-soft);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
 }
 
-.history-listAccount{
-    font-size: 20px;
-    width: 44%;
-    text-align: center;
-    color: var(--MessageColorUncovered);
+.history-subtitle {
+    color: var(--text-soft);
 }
 
-.history-listOperation{
-    font-size: 20px;
-    width: 10%;
-    text-align: center;
-    color: var(--MessageColorUncovered);
-    background-color: var(--BackgroundMasked);
+@media (max-width: 960px) {
+    .history-table__head,
+    .history-row {
+        grid-template-columns: 40px 1.3fr 1fr 0.8fr 0.9fr 1fr;
+    }
 }
 
-.history-listValue{
-    font-size: 20px;
-    width: 14%;
-    text-align: center;
-    color: var(--MessageColorUncovered);
-}
+@media (max-width: 720px) {
+    .history-table__head,
+    .history-row {
+        grid-template-columns: 30px 1.2fr 0.8fr 0.8fr;
+        grid-template-rows: auto auto;
+    }
 
-.history-listCost{
-    font-size: 20px;
-    width: 20%;
-    text-align: center;
-    color: var(--MessageColorUncovered);
-    background-color: var(--BackgroundMasked);
-}
+    .history-table__head span:nth-child(5),
+    .history-table__head span:nth-child(6) {
+        display: none;
+    }
 
-.history-listMenuStatus{
-    font-size: 20px;
-    width: 7%;
-    text-align: center;
-    color: var(--MessageColorUncovered);
-}
-
-.history-listStatus{
-    width: 7%;
-    display: flex;
-    justify-content: right;
-    color: var(--MessageColorUncovered);
-}
-
-.history-approved{
-    font-size: 20px;
-    width: 90%;
-    text-align: center;
-    background-color: var(--ApprovedColor);
-    color: var(--ApprovedColor);
-}
-
-.history-invalid{
-    font-size: 20px;
-    width: 90%;
-    text-align: center;
-    background-color: var(--InvalidColor);
-    color: var(--InvalidColor);
-}
-
-.history-rejected{
-    font-size: 20px;
-    width: 90%;
-    text-align: center;
-    background-color: var(--RejectedColor);
-    color: var(--RejectedColor);
+    .history-row span:nth-child(5),
+    .history-row span:nth-child(6) {
+        grid-column: span 2;
+    }
 }

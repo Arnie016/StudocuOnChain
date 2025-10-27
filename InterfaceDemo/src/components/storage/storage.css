@@ -1,56 +1,82 @@
 @import "../../global.css";
 
-.storage-background{
-    text-align: center;
-    background-color: var(--BackgroundUncovered);
-    min-height: 100vh;
-    flex-direction: column;
+.storage-page {
+    padding-top: 3rem;
+}
+
+.storage-layout {
+    align-items: stretch;
+}
+
+.storage-panel {
     display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.storage{
-    text-align: center;
-    background-color: var(--BackgroundUncovered);
-    width: 80%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.storage-intro{
-    width: 65%;
-    height: 100%;
-    font-size: 20px;
-    text-align: left;
-    padding-right: 10px;
-    color: var(--MessageColorUncovered);
-}
-
-.storage-vertLine{
-    height: 100%;
-    width: 1px;
-    background-color: var(--BackgroundCovered);
-}
-
-.storage-box{
-    height: 100%;
     flex-direction: column;
-    text-align: left;
-    font-size: 20px;
-    padding-left: 20px;
-    color: var(--MessageColorUncovered);
+    gap: 1.25rem;
 }
 
-.storage-storeBox{
-    text-align: left;
-    font-size: 15px;
-    color: var(--KeyMessageColor);
+.storage-panel--intro ol {
+    margin-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    color: var(--text-soft);
 }
 
-.storage-getBox{
-    text-align: left;
-    font-size: 15px;
-    color: var(--MessageColorUncovered);
+.storage-panel--intro li {
+    line-height: 1.4;
+}
+
+.storage-cta {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.storage-panel--actions label {
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.storage-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.storage-status {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.storage-readout {
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.storage-readout span {
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.storage-value {
+    margin-top: 0.35rem;
+    font-size: 2.2rem;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.storage-subtitle {
+    color: var(--text-soft);
+}
+
+@media (max-width: 768px) {
+    .storage-actions {
+        flex-direction: column;
+    }
 }

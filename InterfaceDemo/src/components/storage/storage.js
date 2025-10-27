@@ -5,106 +5,66 @@ import "../../global.css";
 import { GlobalToolBar } from "../../global";
 
 export default function Storage(props){
+    const renderStoreStatus = () => {
+        if (props.storedPending) {
+            return <span className="status-chip status-chip--pending">Transaction pending</span>;
+        }
+        if (props.storedDone) {
+            return <span className="status-chip status-chip--success">Stored on-chain</span>;
+        }
+        return <span className="status-chip status-chip--neutral">Awaiting input</span>;
+    };
 
-    const FunctionIntro = () => {
-        return (
-            <div className = "storage-intro">
-                <p>
-                    &emsp;This is an introduction to this simple demo of applying blockchain contracts via web interface. 
-                    Here a contract is applied for storing and checking value. 
-                    The contract file can be found at "~/src/contracts/SimpleStorage.sol". 
-                    <br/>
-                    &emsp;Similar to what you see on REMIX, 
-                    the functionality of the contract can be implemented with the buttons to the right. 
-                    A value will be stored by filling in a number and clicking "store". 
-                    The value can then be read by clicking "get". 
-                </p>
-            </div>
-        )
-    }
-
-    const StoreValPanel = () => {
-        return (
-            <div>
-                Input a positive number and click 'store':
-                <br />
-                <input width = "30px" type = "number" id = "inputVal"></input>
-                <br />
-                <div className = "storage-storeBox">
-                    <button className = "btn" onClick = {props.storeValHandle}>
-                        store
-                    </button>
-                    {
-                        props.storedPending ?
-                        <span>
-                            {
-                                props.storedDone ?
-                                <span>Done! </span>:
-                                <span>Pending... </span>
-                            }
-                        </span> : 
-                        <span>
-                            {
-                                props.storedDone ?
-                                <span>Rejected! </span>:
-                                <span>Please try again. </span>
-                            }
-                        </span>
-                    }
+    const StoragePage = () => (
+        <div className="page storage-page">
+            <GlobalToolBar />
+            <section className="page-section">
+                <div className="section-heading">
+                    <p className="eyebrow">SimpleStorage contract</p>
+                    <h1>Store &amp; read values with a modern interface</h1>
+                    <p className="storage-subtitle">
+                        The contract lives in <code>src/contracts/SimpleStorage.sol</code>. Enter a uint value, push it on-chain,
+                        and immediately retrieve the latest stored state using the controls below.
+                    </p>
                 </div>
-            </div>
-        )
-    }
 
-    const GetValPanel = () => {
-        return (
-            <div>
-                Click 'get' to check the stored value:&nbsp;
-                <span className = "global-message">
-                    {props.showVal}
-                </span>
-                <br />
-                <button className = "btn" onClick = {props.showValHandle}>
-                    get
-                </button>
-            </div>
-        )
-    }
-
-    const FunctionPanel = () => {
-        return (
-            <div className = "storage-box">
-                <StoreValPanel/>
-                <br/>
-                <GetValPanel/>
-            </div>
-        )
-    }
-
-    const StoragePage = () => {
-        return (
-            <div className = "storage-background">
-                <h1>Function Page</h1>
-                <div className = "storage">
-                    <FunctionIntro/>
-                    <div className = "storage-vertLine">
-                        <p>&nbsp;<br/>&nbsp;<br/>&nbsp;<br/>&nbsp;<br/>&nbsp;<br/>&nbsp;</p>
+                <div className="split-layout storage-layout">
+                    <div className="glass-panel storage-panel storage-panel--intro">
+                        <h3>How it works</h3>
+                        <ol>
+                            <li>Type any positive integer and hit “Store value”.</li>
+                            <li>Wait for MetaMask to confirm the transaction.</li>
+                            <li>Click “Get latest value” to read from the contract.</li>
+                        </ol>
+                        <div className="storage-cta">
+                            <span className="status-chip status-chip--neutral">Gas optimized</span>
+                            <span className="status-chip status-chip--neutral">Event logged</span>
+                        </div>
                     </div>
-                    <FunctionPanel/>
+
+                    <div className="glass-panel storage-panel storage-panel--actions">
+                        <label htmlFor="inputVal">Value to store</label>
+                        <input type="number" id="inputVal" placeholder="Enter a positive integer" min="0" />
+                        <div className="storage-actions">
+                            <button className="btn btn--primary" onClick={props.storeValHandle}>
+                                Store value
+                            </button>
+                            <button className="btn btn--ghost" onClick={props.showValHandle}>
+                                Get latest value
+                            </button>
+                        </div>
+                        <div className="storage-status">
+                            {renderStoreStatus()}
+                            <div className="storage-readout">
+                                <span>Current stored value</span>
+                                <p className="storage-value">{props.showVal}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <GlobalToolBar/>
-            </div>
-        )
-    }
-
-    return (
-        <div>
-            {
-                props.isConnected ?
-                <StoragePage />:
-                <Navigate to = '/InterfaceDemo' />
-            }
+            </section>
         </div>
-    )
+    );
+
+    return props.isConnected ? <StoragePage /> : <Navigate to='/InterfaceDemo' />;
 }
