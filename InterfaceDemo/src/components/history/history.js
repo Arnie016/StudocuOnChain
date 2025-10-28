@@ -7,7 +7,7 @@ import { GlobalToolBar } from "../../global";
 export default function History(props){
     const { toolbarProps = {} } = props;
     const displayNum = 8;
-    const records = Array.isArray(props.recordList) ? props.recordList.slice(1) : [];
+    const records = Array.isArray(props.recordList) ? props.recordList : [];
     const filteredRecords = records.filter(Boolean);
     const latestRecords = filteredRecords.slice(-displayNum).reverse();
 

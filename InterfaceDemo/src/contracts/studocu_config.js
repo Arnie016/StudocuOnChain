@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS_STUDOCU = "0x0000000000000000000000000000000000000000"; // Will be deployed
+export const CONTRACT_ADDRESS_STUDOCU = "0x0ffd36bB732684599E9Ce2c3d20385a286E1F987";
 export const CONTRACT_ABI_STUDOCU = [
 	{
 		"inputs": [],
@@ -304,4 +304,3 @@ export const CONTRACT_ABI_STUDOCU = [
 		"type": "function"
 	}
 ];
-
