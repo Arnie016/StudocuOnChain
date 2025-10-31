@@ -28,6 +28,12 @@ contract StudocuOnChain {
     mapping(uint256 => Document) public documents;
     uint256 public totalDocuments;
     uint256 public totalUsers;
+
+    // Keep an explicit list of registered users to enable correct random sampling
+    address[] private userList;
+    
+    // Track which voters have actually voted (docId => voterIndex => hasVoted)
+    mapping(uint256 => mapping(uint256 => bool)) public hasVotedByIndex;
     
     // Events
     event UserRegistered(address indexed user);
@@ -54,6 +60,7 @@ contract StudocuOnChain {
         require(!registeredUsers[msg.sender], "Already registered");
         
         registeredUsers[msg.sender] = true;
+        userList.push(msg.sender);
         totalUsers++;
         
         emit UserRegistered(msg.sender);
@@ -96,6 +103,7 @@ contract StudocuOnChain {
         // Record vote
         uint256 voterIndex = _getVoterIndex(docId, msg.sender);
         doc.votes[voterIndex] = approval;
+        hasVotedByIndex[docId][voterIndex] = true;
         
         // Pay voter reward
         payable(msg.sender).transfer(VOTE_REWARD);
@@ -147,28 +155,39 @@ contract StudocuOnChain {
     
     // Internal: Select random voters
     function _selectRandomVoters(address uploader) internal view returns (address[] memory) {
+        // Build a pool of real registered users, excluding the uploader
         require(totalUsers >= REQUIRED_VOTERS, "Not enough users");
-        
-        address[] memory allUsers = new address[](totalUsers);
-        uint256 count = 0;
-        
-        // Collect all registered users except uploader
-        for (uint256 i = 0; i < address(this).balance / REGISTRATION_FEE; i++) {
-            address user = address(uint160(i + 1));
-            if (registeredUsers[user] && user != uploader) {
-                allUsers[count] = user;
-                count++;
+
+        // Count eligible users
+        uint256 eligibleCount = 0;
+        for (uint256 i = 0; i < userList.length; i++) {
+            if (userList[i] != uploader && registeredUsers[userList[i]]) {
+                eligibleCount++;
             }
         }
-        
+        require(eligibleCount >= REQUIRED_VOTERS, "Not enough distinct voters");
+
+        // Copy eligible users into a memory pool
+        address[] memory pool = new address[](eligibleCount);
+        uint256 p = 0;
+        for (uint256 i = 0; i < userList.length; i++) {
+            address u = userList[i];
+            if (u != uploader && registeredUsers[u]) {
+                pool[p++] = u;
+            }
+        }
+
+        // Pseudo-randomly pick REQUIRED_VOTERS unique addresses via partial Fisher-Yates shuffle
         address[] memory selected = new address[](REQUIRED_VOTERS);
         bytes32 seed = keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender));
-        
         for (uint256 i = 0; i < REQUIRED_VOTERS; i++) {
-            uint256 index = uint256(keccak256(abi.encodePacked(seed, i))) % count;
-            selected[i] = allUsers[index];
+            uint256 remaining = eligibleCount - i;
+            uint256 idx = uint256(keccak256(abi.encodePacked(seed, i))) % remaining;
+            selected[i] = pool[idx];
+            // move last unpicked element to idx to avoid duplicates
+            pool[idx] = pool[remaining - 1];
         }
-        
+
         return selected;
     }
     
@@ -197,15 +216,15 @@ contract StudocuOnChain {
     // Internal: Check if voter has voted
     function _hasVoted(uint256 docId, address voter) internal view returns (bool) {
         uint256 voterIndex = _getVoterIndex(docId, voter);
-        return documents[docId].votes[voterIndex];
+        return hasVotedByIndex[docId][voterIndex];
     }
     
     // Internal: Count votes
     function _countVotes(uint256 docId) internal view returns (uint256) {
-        bool[] memory votes = documents[docId].votes;
         uint256 count = 0;
-        for (uint256 i = 0; i < votes.length; i++) {
-            if (votes[i] == true || votes[i] == false) {
+        Document storage doc = documents[docId];
+        for (uint256 i = 0; i < doc.voters.length; i++) {
+            if (hasVotedByIndex[docId][i]) {
                 count++;
             }
         }
@@ -214,10 +233,10 @@ contract StudocuOnChain {
     
     // Internal: Count approvals
     function _countApprovals(uint256 docId) internal view returns (uint256) {
-        bool[] memory votes = documents[docId].votes;
+        Document storage doc = documents[docId];
         uint256 count = 0;
-        for (uint256 i = 0; i < votes.length; i++) {
-            if (votes[i]) {
+        for (uint256 i = 0; i < doc.votes.length; i++) {
+            if (hasVotedByIndex[docId][i] && doc.votes[i]) {
                 count++;
             }
         }
