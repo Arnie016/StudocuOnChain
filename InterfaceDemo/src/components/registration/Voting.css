@@ -1,0 +1,154 @@
+@import "../../global.css";
+
+.voting-page {
+    padding-top: 2.5rem;
+}
+
+.voting-section {
+    gap: 2rem;
+}
+
+.voting-subtitle {
+    color: var(--text-soft);
+    font-size: 1.05rem;
+    margin-top: 0.75rem;
+}
+
+.voting-queue {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.studocu-voting {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.studocu-vote-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.studocu-vote-card--completed {
+    opacity: 0.7;
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.studocu-vote-card--uploader {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.studocu-vote-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.studocu-ipfs-hash {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
+    word-break: break-all;
+    margin: 0.25rem 0;
+}
+
+.studocu-uploader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.studocu-vote-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.studocu-vote-count {
+    font-weight: 600;
+}
+
+.studocu-vote-approvals {
+    color: var(--text-soft);
+}
+
+.studocu-vote-time {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.studocu-vote-links {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.studocu-vote-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.studocu-vote-status {
+    margin-top: 0.5rem;
+}
+
+.studocu-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-soft);
+}
+
+.studocu-empty p {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.studocu-empty span {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.studocu-completed-votes {
+    margin-top: 2rem;
+}
+
+.studocu-divider {
+    margin-bottom: 1rem;
+}
+
+.studocu-meta {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+}
+
+.eyebrow {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.studocu-alert {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.studocu-alert p {
+    color: var(--text-soft);
+}
+

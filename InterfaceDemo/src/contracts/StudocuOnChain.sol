@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity >=0.8.0 <0.9.0;
 
-contract StudocuOnChain {
+// Demo-only safety imports (used by Remix)
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract StudocuOnChain is Ownable, ReentrancyGuard {
     // Payment constants
     uint256 public constant REGISTRATION_FEE = 0.01 ether;
     uint256 public constant UPLOAD_DEPOSIT = 0.005 ether;
@@ -9,6 +13,7 @@ contract StudocuOnChain {
     uint256 public constant ACCESS_FEE = 0.001 ether;
     uint256 public constant APPROVAL_THRESHOLD = 3;
     uint256 public constant REQUIRED_VOTERS = 5;
+    uint256 public constant VOTING_DURATION = 7 days; // window for voting
     
     // Document structure
     struct Document {
@@ -21,6 +26,7 @@ contract StudocuOnChain {
         bool approved;
         bool processComplete;
         uint256 timestamp;
+        uint256 votingDeadline;
     }
     
     // State variables
@@ -42,6 +48,7 @@ contract StudocuOnChain {
     event DocumentApproved(uint256 indexed docId);
     event DocumentRejected(uint256 indexed docId);
     event DocumentAccessed(uint256 indexed docId, address indexed user);
+    event DocumentResult(uint256 indexed docId, bool approved, uint256 approvals, uint256 totalVotes);
     
     // Modifiers
     modifier onlyRegistered() {
@@ -53,6 +60,9 @@ contract StudocuOnChain {
         require(docId < totalDocuments, "Invalid document ID");
         _;
     }
+    
+    // Constructor: Initialize Ownable with deployer as owner
+    constructor() Ownable(msg.sender) {}
     
     // User registration
     function registerUser() external payable {
@@ -85,7 +95,8 @@ contract StudocuOnChain {
             votes: new bool[](REQUIRED_VOTERS),
             approved: false,
             processComplete: false,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            votingDeadline: block.timestamp + VOTING_DURATION
         });
         
         emit DocumentUploaded(totalDocuments, msg.sender, ipfsHash);
@@ -96,6 +107,7 @@ contract StudocuOnChain {
     function voteOnDocument(uint256 docId, bool approval) external validDocument(docId) {
         Document storage doc = documents[docId];
         require(!doc.processComplete, "Voting complete");
+        require(block.timestamp <= doc.votingDeadline, "Voting period over");
         require(registeredUsers[msg.sender], "Must be registered");
         require(_isVoter(docId, msg.sender), "Not selected as voter");
         require(!_hasVoted(docId, msg.sender), "Already voted");
@@ -135,6 +147,13 @@ contract StudocuOnChain {
         Document storage doc = documents[docId];
         return (doc.uploader, doc.ipfsHash, doc.approved, doc.timestamp);
     }
+
+    // View: time remaining until voting closes (0 if closed)
+    function timeRemaining(uint256 docId) external view validDocument(docId) returns (uint256) {
+        Document storage doc = documents[docId];
+        if (block.timestamp >= doc.votingDeadline) return 0;
+        return doc.votingDeadline - block.timestamp;
+    }
     
     // Get password for approved document (only called after payment)
     function getDocumentPassword(uint256 docId) external view returns (string memory) {
@@ -151,6 +170,15 @@ contract StudocuOnChain {
     // Check if user has voted
     function hasUserVoted(uint256 docId, address user) external view returns (bool) {
         return _hasVoted(docId, user);
+    }
+    
+    // Get voting progress (returns: totalVotes, approvals, requiredVoters)
+    function getVotingProgress(uint256 docId) external view validDocument(docId) returns (
+        uint256 totalVotes,
+        uint256 approvals,
+        uint256 requiredVoters
+    ) {
+        return (_countVotes(docId), _countApprovals(docId), REQUIRED_VOTERS);
     }
     
     // Internal: Select random voters
@@ -179,7 +207,8 @@ contract StudocuOnChain {
 
         // Pseudo-randomly pick REQUIRED_VOTERS unique addresses via partial Fisher-Yates shuffle
         address[] memory selected = new address[](REQUIRED_VOTERS);
-        bytes32 seed = keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender));
+        // Demo-only pseudorandomness (acceptable for demo, not production)
+        bytes32 seed = keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender));
         for (uint256 i = 0; i < REQUIRED_VOTERS; i++) {
             uint256 remaining = eligibleCount - i;
             uint256 idx = uint256(keccak256(abi.encodePacked(seed, i))) % remaining;
@@ -261,11 +290,19 @@ contract StudocuOnChain {
             // Deposit is kept in contract
             emit DocumentRejected(docId);
         }
+
+        emit DocumentResult(docId, doc.approved, approvals, _countVotes(docId));
     }
     
-    // Contract owner can withdraw funds
-    function withdraw() external {
-        payable(msg.sender).transfer(address(this).balance);
+    // Contract owner can withdraw funds (call-based, protected)
+    function withdraw(uint256 amount) external onlyOwner nonReentrant {
+        require(amount <= address(this).balance, "Insufficient funds");
+        (bool ok, ) = payable(owner()).call{value: amount}("");
+        require(ok, "Withdraw failed");
     }
+
+    // Accept direct ETH transfers (demo)
+    receive() external payable {}
+    fallback() external payable {}
 }
 

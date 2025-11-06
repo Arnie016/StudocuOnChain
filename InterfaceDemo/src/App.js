@@ -10,6 +10,7 @@ import Storage from "./components/storage/storage";
 import History from "./components/history/history";
 import Leader from "./components/leader/leader";
 import Registration from "./components/registration/registration";
+import Voting from "./components/registration/Voting";
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./contracts/config";
 import { CONTRACT_ABI_2, CONTRACT_ADDRESS_2 } from "./contracts/config_2";
 import { CONTRACT_ABI_STUDOCU, CONTRACT_ADDRESS_STUDOCU } from "./contracts/studocu_config";
@@ -382,17 +383,21 @@ export default function App() {
                 const base = await studocuContract.methods.getDocument(docId).call();
                 let processComplete = false;
                 let depositAmount = "0";
+                let votingDeadline = 0;
 
                 try {
                     const meta = await studocuContract.methods.documents(docId).call();
                     processComplete = Boolean(meta.processComplete);
                     depositAmount = meta.depositAmount?.toString?.() ?? meta.depositAmount ?? "0";
+                    votingDeadline = Number(meta.votingDeadline || 0);
                 } catch (metaErr) {
                     console.warn(`Unable to load document metadata for doc ${docId}`, metaErr);
                 }
 
                 let isVoter = false;
                 let hasVoted = false;
+                let votingProgress = { totalVotes: 0, approvals: 0, requiredVoters: 5 };
+                let timeRemaining = 0;
 
                 if (address) {
                     try {
@@ -405,6 +410,23 @@ export default function App() {
                     }
                 }
 
+                try {
+                    const progress = await studocuContract.methods.getVotingProgress(docId).call();
+                    votingProgress = {
+                        totalVotes: Number(progress.totalVotes),
+                        approvals: Number(progress.approvals),
+                        requiredVoters: Number(progress.requiredVoters)
+                    };
+                } catch (progErr) {
+                    console.warn(`Unable to load voting progress for doc ${docId}`, progErr);
+                }
+
+                try {
+                    timeRemaining = Number(await studocuContract.methods.timeRemaining(docId).call());
+                } catch (timeErr) {
+                    console.warn(`Unable to load time remaining for doc ${docId}`, timeErr);
+                }
+
                 return {
                     id: docId,
                     uploader: base.uploader,
@@ -414,7 +436,10 @@ export default function App() {
                     processComplete,
                     depositAmount,
                     isVoter,
-                    hasVoted
+                    hasVoted,
+                    votingProgress,
+                    timeRemaining,
+                    votingDeadline
                 };
             }));
 
@@ -480,9 +505,34 @@ export default function App() {
 
         try {
             const value = studocuFees?.uploadWei ?? await studocuContract.methods.UPLOAD_DEPOSIT().call();
+            
+            // Estimate gas and check for errors early (catches revert reasons before sending)
+            let gasLimit;
+            try {
+                const estimatedGas = await studocuContract.methods.uploadDocument(ipfsHash, password).estimateGas({
+                    from: address,
+                    value
+                });
+                // Web3.js returns BigNumber, convert to number
+                const estimatedGasNum = Number(estimatedGas);
+                // Add 10% buffer, cap at 15M to stay under network limit of 16.7M
+                const withBuffer = Math.floor(estimatedGasNum * 1.1);
+                gasLimit = Math.min(withBuffer, 15000000).toString();
+            } catch (estimateErr) {
+                // If estimation fails, check for specific error messages
+                const errMsg = estimateErr?.message || String(estimateErr);
+                if (errMsg.includes("Not enough users") || errMsg.includes("Not enough distinct voters")) {
+                    throw new Error("Not enough registered users. Need at least 6 users (including you) to upload documents. Other users need to register first.");
+                }
+                // For other errors, use a safe default gas limit
+                console.warn("Gas estimation failed, using default:", estimateErr);
+                gasLimit = "8000000"; // 8M should be plenty for upload
+            }
+            
             const tx = await studocuContract.methods.uploadDocument(ipfsHash, password).send({
                 from: address,
-                value
+                value,
+                gas: gasLimit
             });
 
             pushHistoryRecord("studocu-upload", ipfsHash, tx);
@@ -492,7 +542,24 @@ export default function App() {
         } catch (err) {
             console.error("Studocu upload failed", err);
             pushHistoryRecord("studocu-upload", ipfsHash, "null");
-            setStudocuError(err?.message || "Upload failed.");
+            
+            // Parse revert reason from error
+            let errorMessage = "Upload failed.";
+            if (err?.message) {
+                errorMessage = err.message;
+                // Check for common revert reasons
+                if (err.message.includes("Not enough users") || err.message.includes("Not enough distinct voters")) {
+                    errorMessage = "Not enough registered users. Need at least 6 users (including you) to upload documents. Other users need to register first.";
+                } else if (err.message.includes("revert")) {
+                    // Try to extract the revert reason
+                    const revertMatch = err.message.match(/revert\s+(.+)/i);
+                    if (revertMatch) {
+                        errorMessage = `Transaction failed: ${revertMatch[1]}`;
+                    }
+                }
+            }
+            
+            setStudocuError(errorMessage);
             throw err;
         } finally {
             setStudocuPendingAction(null);
@@ -510,7 +577,11 @@ export default function App() {
         try {
             const tx = await studocuContract.methods.voteOnDocument(docId, approval).send({ from: address });
             pushHistoryRecord("studocu-vote", `${docId}:${approval ? "approve" : "reject"}`, tx);
+            
+            // Wait a moment for transaction to be processed, then refresh
+            await new Promise((resolve) => setTimeout(resolve, 1500));
             await refreshStudocuDocuments();
+            await refreshStudocuSummary();
             return tx;
         } catch (err) {
             console.error("Studocu vote failed", err);
@@ -537,12 +608,28 @@ export default function App() {
                 value
             });
 
-            const password = await studocuContract.methods.getDocumentPassword(docId).call();
+            // Wait a moment for transaction to be processed
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            // Get password with timeout (10 seconds max)
+            let password = "Retrieving...";
+            try {
+                const passwordPromise = studocuContract.methods.getDocumentPassword(docId).call({ from: address });
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("Timeout after 10 seconds")), 10000)
+                );
+                
+                password = await Promise.race([passwordPromise, timeoutPromise]);
+            } catch (pwdErr) {
+                console.error("Password retrieval error:", pwdErr);
+                password = "Error: Could not retrieve password. Transaction completed but password unavailable.";
+            }
+
             const doc = studocuDocs.find((item) => item.id === docId);
 
             setStudocuLastAccess({
                 docId,
-                password,
+                password: password || "Password not available",
                 ipfsHash: doc?.ipfsHash || "",
                 timestamp: Date.now()
             });
@@ -661,6 +748,14 @@ export default function App() {
         if (address) {
             refreshStudocuRegistration();
         }
+
+        // Auto-refresh documents every 10 seconds to catch votes from other users
+        const refreshInterval = setInterval(() => {
+            refreshStudocuDocuments();
+            refreshStudocuSummary();
+        }, 10000); // 10 seconds
+
+        return () => clearInterval(refreshInterval);
     }, [studocuContract, address, refreshStudocuSummary, refreshStudocuRegistration, refreshStudocuDocuments]);
 
     useEffect(() => {
@@ -794,11 +889,24 @@ export default function App() {
             pendingAction={studocuPendingAction}
             lastAccess={studocuLastAccess}
             studocuError={studocuError}
-            onRefresh={syncStudocuData}
             onRegister={registerStudocuUser}
             onUpload={uploadStudocuDocument}
-            onVote={voteOnStudocuDocument}
             onAccess={accessStudocuDocument}
+            address={address}
+        />
+    );
+
+    const VotingDisplay = () => (
+        <Voting
+            isConnected={isConnected}
+            contractReady={studocuReady}
+            toolbarProps={toolbarProps}
+            isRegistered={studocuRegistered}
+            fees={studocuFees}
+            documents={studocuDocs}
+            documentsLoading={studocuDocsLoading}
+            pendingAction={studocuPendingAction}
+            onVote={voteOnStudocuDocument}
             address={address}
         />
     );
@@ -809,6 +917,7 @@ export default function App() {
                 <Route path="/" element={<LoginDisplay />} />
                 <Route path="/EE4032" element={<Navigate to="/" replace />} />
                 <Route path="/InterfaceDemo/profile" element={<ProfileDisplay />} />
+                <Route path="/InterfaceDemo/vote" element={<VotingDisplay />} />
                 <Route path="/InterfaceDemo/storage" element={<StorageDisplay />} />
                 <Route path="/InterfaceDemo/history" element={<HistoryDisplay />} />
                 <Route path="/InterfaceDemo/leader" element={<LeaderDisplay />} />

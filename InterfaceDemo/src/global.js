@@ -3,9 +3,9 @@ import { NavLink } from "react-router-dom";
 const navLinks = [
     { path: "/", label: "Login", exact: true },
     { path: "/InterfaceDemo/profile", label: "Profile" },
+    { path: "/InterfaceDemo/vote", label: "Vote" },
     { path: "/InterfaceDemo/storage", label: "Storage" },
     { path: "/InterfaceDemo/history", label: "History" },
-    { path: "/InterfaceDemo/leader", label: "Leader" },
     { path: "/InterfaceDemo/register", label: "Studocu" }
 ];
 
