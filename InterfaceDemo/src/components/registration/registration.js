@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import './registration.css';
 import '../../global.css';
@@ -69,23 +69,8 @@ export default function Registration(props) {
     const [uploadingIPFS, setUploadingIPFS] = useState(false);
     const [viewingPDF, setViewingPDF] = useState(null);
     const passwordInputRef = useRef(null);
-    const scrollPositionRef = useRef(0);
 
     const lowerAddress = address?.toLowerCase?.();
-
-    // Prevent scroll when password input value changes
-    useEffect(() => {
-        if (passwordInputRef.current && document.activeElement === passwordInputRef.current) {
-            // Save scroll position before state update
-            const scrollY = scrollPositionRef.current || window.scrollY;
-            // Restore scroll position after React re-render
-            requestAnimationFrame(() => {
-                if (document.activeElement === passwordInputRef.current) {
-                    window.scrollTo(0, scrollY);
-                }
-            });
-        }
-    }, [password]);
 
     const myUploads = useMemo(() => (
         Array.isArray(documents) && lowerAddress
@@ -608,15 +593,7 @@ export default function Registration(props) {
                             placeholder="Password to unlock the PDF"
                             value={password || ''}
                             onChange={(e) => {
-                                const value = e.target.value;
-                                scrollPositionRef.current = window.scrollY;
-                                setPassword(value);
-                            }}
-                            onFocus={(e) => {
-                                scrollPositionRef.current = window.scrollY;
-                            }}
-                            onBlur={() => {
-                                scrollPositionRef.current = window.scrollY;
+                                setPassword(e.target.value);
                             }}
                             onKeyDown={(e) => {
                                 // Prevent form submission on Enter unless button is clicked
@@ -625,8 +602,7 @@ export default function Registration(props) {
                                     e.stopPropagation();
                                 }
                             }}
-                            disabled={!canTransact || !isRegistered || isBusy('upload') || uploadingIPFS}
-                            readOnly={false}
+                            disabled={isBusy('upload') || uploadingIPFS}
                             autoComplete="off"
                         />
                         <p className="studocu-hint-small">

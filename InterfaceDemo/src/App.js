@@ -99,6 +99,7 @@ export default function App() {
     });
     const [studocuDocs, setStudocuDocs] = useState([]);
     const [studocuDocsLoading, setStudocuDocsLoading] = useState(false);
+    const studocuDocsLoadingRef = useRef(false);
     const [studocuError, setStudocuError] = useState(null);
     const [studocuPendingAction, setStudocuPendingAction] = useState(null);
     const [studocuLastAccess, setStudocuLastAccess] = useState(null);
@@ -373,6 +374,12 @@ export default function App() {
             return;
         }
 
+        // Skip if already loading to prevent overlapping requests
+        if (studocuDocsLoadingRef.current) {
+            return;
+        }
+
+        studocuDocsLoadingRef.current = true;
         setStudocuDocsLoading(true);
         try {
             const totalDocumentsRaw = await studocuContract.methods.totalDocuments().call();
@@ -448,8 +455,17 @@ export default function App() {
             setStudocuError(null);
         } catch (err) {
             console.error("Failed to fetch Studocu documents", err);
-            setStudocuError(err?.message || "Unable to fetch documents. Try again later.");
+            const errorMsg = err?.message || "Unable to fetch documents. Try again later.";
+            
+            // Don't show error for RPC rate limit issues - just log it
+            if (errorMsg.includes('too many errors') || errorMsg.includes('rate limit') || errorMsg.includes('RPC endpoint')) {
+                console.warn("RPC rate limit hit, will retry on next refresh");
+                // Keep existing data, don't show error to user
+            } else {
+                setStudocuError(errorMsg);
+            }
         } finally {
+            studocuDocsLoadingRef.current = false;
             setStudocuDocsLoading(false);
         }
     }, [studocuContract, address]);
@@ -749,11 +765,24 @@ export default function App() {
             refreshStudocuRegistration();
         }
 
-        // Auto-refresh documents every 10 seconds to catch votes from other users
+        // Auto-refresh documents every 30 seconds to catch votes from other users
+        // Reduced frequency to avoid RPC rate limits
         const refreshInterval = setInterval(() => {
-            refreshStudocuDocuments();
-            refreshStudocuSummary();
-        }, 10000); // 10 seconds
+            // Only refresh if not currently loading to avoid overlapping requests
+            if (!studocuDocsLoadingRef.current) {
+                refreshStudocuDocuments().catch(err => {
+                    // Silently handle errors to avoid spam
+                    if (err?.message && !err.message.includes('too many errors')) {
+                        console.warn('Auto-refresh error:', err.message);
+                    }
+                });
+                refreshStudocuSummary().catch(err => {
+                    if (err?.message && !err.message.includes('too many errors')) {
+                        console.warn('Auto-refresh summary error:', err.message);
+                    }
+                });
+            }
+        }, 30000); // 30 seconds (reduced from 10 to avoid rate limits)
 
         return () => clearInterval(refreshInterval);
     }, [studocuContract, address, refreshStudocuSummary, refreshStudocuRegistration, refreshStudocuDocuments]);

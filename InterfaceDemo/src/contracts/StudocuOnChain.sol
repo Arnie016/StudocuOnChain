@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract StudocuOnChain is Ownable, ReentrancyGuard {
     // Payment constants
-    uint256 public constant REGISTRATION_FEE = 0.01 ether;
+    uint256 public constant REGISTRATION_FEE = 0.001 ether;
     uint256 public constant UPLOAD_DEPOSIT = 0.005 ether;
     uint256 public constant VOTE_REWARD = 0.0001 ether;
     uint256 public constant ACCESS_FEE = 0.001 ether;
