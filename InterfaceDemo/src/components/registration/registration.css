@@ -144,6 +144,35 @@
     margin-bottom: 0.5rem;
 }
 
+.studocu-upload-combo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.studocu-upload-combo input[type="text"] {
+    flex: 1;
+    margin: 0;
+}
+
+.studocu-upload-or {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.studocu-upload-combo label.btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.studocu-upload-combo label.btn:has(input:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .studocu-upload-divider {
     margin: 1rem 0;
     padding: 1rem 0;

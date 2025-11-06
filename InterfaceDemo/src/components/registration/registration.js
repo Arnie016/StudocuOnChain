@@ -59,6 +59,7 @@ export default function Registration(props) {
         onRegister,
         onUpload,
         onAccess,
+        onRefresh,
         address
     } = props;
 
@@ -132,6 +133,7 @@ export default function Registration(props) {
         }
 
         setSelectedFile(file);
+        setIpfsHash(''); // Clear IPFS hash when file is selected
         setFlash(null);
     };
 
@@ -510,20 +512,29 @@ export default function Registration(props) {
                     </div>
                 </div>
 
-                <div className="glass-panel studocu-upload">
+                    <div className="glass-panel studocu-upload">
                     <div className="studocu-upload-header">
                         <div>
                             <h3>Upload new document</h3>
                             <p className="studocu-meta">
                                 Deposit {uploadFeeLabel}. Funds return automatically once the document reaches the approval quorum.
                             </p>
-                            <p className="studocu-hint-small" style={{ marginTop: '0.5rem', fontSize: '0.8rem', opacity: 0.7 }}>
-                                ⚡ Auto-updates every 10 seconds
-                            </p>
                         </div>
-                        <span className="status-chip status-chip--neutral">
-                            {pendingDocs.length} pending · {approvedDocs.length} approved
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <span className="status-chip status-chip--neutral">
+                                {pendingDocs.length} pending · {approvedDocs.length} approved
+                            </span>
+                            {onRefresh && (
+                                <button
+                                    className="btn btn--ghost btn--small"
+                                    onClick={onRefresh}
+                                    disabled={documentsLoading}
+                                    title="Refresh data"
+                                >
+                                    🔄 Refresh
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <form 
                         className="studocu-upload-form" 
@@ -540,49 +551,46 @@ export default function Registration(props) {
                             }
                         }}
                     >
-                        <label htmlFor="ipfsHash">IPFS Hash (paste hash if you already have one)</label>
-                        <input
-                            id="ipfsHash"
-                            type="text"
-                            placeholder="Qm... (paste IPFS hash here, or upload file below)"
-                            value={ipfsHash || ''}
-                            onChange={(e) => setIpfsHash(e.target.value)}
-                            disabled={uploadingIPFS || !!selectedFile}
-                            autoComplete="off"
-                        />
-                        <p className="studocu-hint-small">
-                            Don't have a hash? Upload a file below instead. Or use{' '}
-                            <a href="https://console.storacha.network/" target="_blank" rel="noopener noreferrer" style={{textDecoration: 'underline'}}>
-                                Storacha Console
-                            </a>{' '}
-                            to upload and get a hash.
-                        </p>
-                        {ipfsHash && !selectedFile && (
-                            <div className="studocu-file-info">
-                                <span className="status-chip status-chip--success">
-                                    ✅ Using IPFS Hash: {ipfsHash.substring(0, 20)}...{ipfsHash.substring(ipfsHash.length - 10)}
-                                </span>
-                            </div>
-                        )}
-                        <div className="studocu-upload-divider">
-                            <span className="eyebrow">OR upload new file</span>
+                        <label htmlFor="ipfsHash">IPFS Hash or File</label>
+                        <div className="studocu-upload-combo">
+                            <input
+                                id="ipfsHash"
+                                type="text"
+                                placeholder="Paste IPFS hash (Qm...) or upload file"
+                                value={ipfsHash || ''}
+                                onChange={(e) => {
+                                    setIpfsHash(e.target.value);
+                                    if (e.target.value) setSelectedFile(null);
+                                }}
+                                disabled={uploadingIPFS || !!selectedFile}
+                                autoComplete="off"
+                                style={{ flex: 1 }}
+                            />
+                            <span className="studocu-upload-or">or</span>
+                            <label htmlFor="fileInput" className="btn btn--ghost btn--small" style={{ margin: 0, cursor: uploadingIPFS || !!ipfsHash ? 'not-allowed' : 'pointer' }}>
+                                📎 Choose File
+                            </label>
+                            <input
+                                id="fileInput"
+                                type="file"
+                                accept="application/pdf"
+                                onChange={handleFileSelect}
+                                disabled={uploadingIPFS || !!ipfsHash}
+                                style={{ display: 'none' }}
+                            />
                         </div>
-                        <label htmlFor="fileInput">Select PDF File (only if uploading new file to IPFS)</label>
-                        <input
-                            id="fileInput"
-                            type="file"
-                            accept="application/pdf"
-                            onChange={handleFileSelect}
-                            disabled={!canTransact || !isRegistered || isBusy('upload') || uploadingIPFS || !!ipfsHash}
-                        />
-                        {selectedFile && (
-                            <div className="studocu-file-info">
-                                <span className="status-chip status-chip--success">
-                                    ✓ {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                                </span>
-                                <p className="studocu-hint-small">
-                                    File will be uploaded to IPFS when you click "Upload Document"
-                                </p>
+                        {(ipfsHash || selectedFile) && (
+                            <div className="studocu-file-info" style={{ marginTop: '0.5rem' }}>
+                                {ipfsHash && !selectedFile && (
+                                    <span className="status-chip status-chip--success">
+                                        ✅ Using IPFS Hash: {ipfsHash.substring(0, 20)}...{ipfsHash.substring(ipfsHash.length - 10)}
+                                    </span>
+                                )}
+                                {selectedFile && (
+                                    <span className="status-chip status-chip--success">
+                                        ✓ {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                                    </span>
+                                )}
                             </div>
                         )}
                         <label htmlFor="docPassword">Document Password (required)</label>

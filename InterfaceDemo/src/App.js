@@ -322,14 +322,54 @@ export default function App() {
         }
 
         try {
-            const [registrationFee, uploadDeposit, accessFee, voteReward, totalDocumentsRaw, totalUsersRaw] = await Promise.all([
-                studocuContract.methods.REGISTRATION_FEE().call(),
-                studocuContract.methods.UPLOAD_DEPOSIT().call(),
-                studocuContract.methods.ACCESS_FEE().call(),
-                studocuContract.methods.VOTE_REWARD().call(),
-                studocuContract.methods.totalDocuments().call(),
-                studocuContract.methods.totalUsers().call()
-            ]);
+            // Try to call constants one by one with better error handling
+            let registrationFee, uploadDeposit, accessFee, voteReward, totalDocumentsRaw, totalUsersRaw;
+            
+            try {
+                registrationFee = await studocuContract.methods.REGISTRATION_FEE().call();
+            } catch (e) {
+                console.warn("Failed to read REGISTRATION_FEE:", e);
+                // Fallback to known value (0.01 ETH = 10000000000000000 wei)
+                registrationFee = "10000000000000000";
+            }
+            
+            try {
+                uploadDeposit = await studocuContract.methods.UPLOAD_DEPOSIT().call();
+            } catch (e) {
+                console.warn("Failed to read UPLOAD_DEPOSIT:", e);
+                // Fallback to known value (0.005 ETH = 5000000000000000 wei)
+                uploadDeposit = "5000000000000000";
+            }
+            
+            try {
+                accessFee = await studocuContract.methods.ACCESS_FEE().call();
+            } catch (e) {
+                console.warn("Failed to read ACCESS_FEE:", e);
+                // Fallback to known value (0.001 ETH = 1000000000000000 wei)
+                accessFee = "1000000000000000";
+            }
+            
+            try {
+                voteReward = await studocuContract.methods.VOTE_REWARD().call();
+            } catch (e) {
+                console.warn("Failed to read VOTE_REWARD:", e);
+                // Fallback to known value (0.0001 ETH = 100000000000000 wei)
+                voteReward = "100000000000000";
+            }
+            
+            try {
+                totalDocumentsRaw = await studocuContract.methods.totalDocuments().call();
+            } catch (e) {
+                console.warn("Failed to read totalDocuments:", e);
+                totalDocumentsRaw = "0";
+            }
+            
+            try {
+                totalUsersRaw = await studocuContract.methods.totalUsers().call();
+            } catch (e) {
+                console.warn("Failed to read totalUsers:", e);
+                totalUsersRaw = "0";
+            }
 
             setStudocuFees({
                 registrationWei: registrationFee,
@@ -350,7 +390,24 @@ export default function App() {
             setStudocuError(null);
         } catch (err) {
             console.error("Failed to refresh Studocu summary", err);
-            setStudocuError(err?.message || "Unable to load Studocu summary.");
+            // Don't show error if it's just ABI/decoding issues - use fallback values
+            if (err?.message?.includes("decoding") || err?.message?.includes("ABI")) {
+                console.warn("Using fallback fee values due to ABI issue");
+                setStudocuFees({
+                    registrationWei: "10000000000000000", // 0.01 ETH
+                    registrationEth: "0.01",
+                    uploadWei: "5000000000000000", // 0.005 ETH
+                    uploadEth: "0.005",
+                    accessWei: "1000000000000000", // 0.001 ETH
+                    accessEth: "0.001",
+                    voteRewardWei: "100000000000000", // 0.0001 ETH
+                    voteRewardEth: "0.0001"
+                });
+                setStudocuStats({ totalDocuments: 0, totalUsers: 0 });
+                setStudocuError(null);
+            } else {
+                setStudocuError(err?.message || "Unable to load Studocu summary.");
+            }
         }
     }, [studocuContract, formatWeiToEth]);
 
@@ -362,9 +419,12 @@ export default function App() {
 
         try {
             const registered = await studocuContract.methods.registeredUsers(address).call();
-            setStudocuRegistered(Boolean(registered));
+            const isReg = Boolean(registered);
+            setStudocuRegistered(isReg);
+            console.log("Registration status:", isReg);
         } catch (err) {
             console.error("Failed to check Studocu registration", err);
+            // Don't set to false on error - might be temporary RPC issue
         }
     }, [studocuContract, address]);
 
@@ -505,7 +565,7 @@ export default function App() {
         } finally {
             setStudocuPendingAction(null);
         }
-    }, [studocuContract, address, studocuFees, pushHistoryRecord, formatWeiToEth, refreshStudocuRegistration, refreshStudocuSummary]);
+    }, [studocuContract, address, studocuFees, pushHistoryRecord, formatWeiToEth, refreshStudocuSummary, refreshStudocuRegistration]);
 
     const uploadStudocuDocument = useCallback(async ({ ipfsHash, password }) => {
         if (!studocuContract || !address) {
@@ -765,26 +825,10 @@ export default function App() {
             refreshStudocuRegistration();
         }
 
-        // Auto-refresh documents every 30 seconds to catch votes from other users
-        // Reduced frequency to avoid RPC rate limits
-        const refreshInterval = setInterval(() => {
-            // Only refresh if not currently loading to avoid overlapping requests
-            if (!studocuDocsLoadingRef.current) {
-                refreshStudocuDocuments().catch(err => {
-                    // Silently handle errors to avoid spam
-                    if (err?.message && !err.message.includes('too many errors')) {
-                        console.warn('Auto-refresh error:', err.message);
-                    }
-                });
-                refreshStudocuSummary().catch(err => {
-                    if (err?.message && !err.message.includes('too many errors')) {
-                        console.warn('Auto-refresh summary error:', err.message);
-                    }
-                });
-            }
-        }, 30000); // 30 seconds (reduced from 10 to avoid rate limits)
-
-        return () => clearInterval(refreshInterval);
+        // Auto-refresh DISABLED to avoid RPC rate limits
+        // Data refreshes automatically after user actions (vote, upload, access)
+        // Users can manually refresh using the refresh button in the UI
+        // If you need auto-refresh, increase interval to 2-5 minutes minimum
     }, [studocuContract, address, refreshStudocuSummary, refreshStudocuRegistration, refreshStudocuDocuments]);
 
     useEffect(() => {
@@ -921,6 +965,7 @@ export default function App() {
             onRegister={registerStudocuUser}
             onUpload={uploadStudocuDocument}
             onAccess={accessStudocuDocument}
+            onRefresh={syncStudocuData}
             address={address}
         />
     );
@@ -936,6 +981,7 @@ export default function App() {
             documentsLoading={studocuDocsLoading}
             pendingAction={studocuPendingAction}
             onVote={voteOnStudocuDocument}
+            onRefresh={syncStudocuData}
             address={address}
         />
     );

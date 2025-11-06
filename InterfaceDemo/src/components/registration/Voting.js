@@ -28,6 +28,7 @@ export default function Voting(props) {
         documentsLoading = false,
         pendingAction,
         onVote,
+        onRefresh,
         address
     } = props;
 
@@ -218,14 +219,25 @@ export default function Voting(props) {
             />
             <section className="page-section voting-section">
                 <div className="section-heading">
-                    <p className="eyebrow">Voting Queue</p>
-                    <h1>Review and vote on documents</h1>
-                    <p className="voting-subtitle">
-                        Earn {voteRewardLabel} per vote. Preview documents before making your decision.
-                    </p>
-                    <p className="studocu-hint-small" style={{ marginTop: '0.5rem', fontSize: '0.8rem', opacity: 0.7 }}>
-                        ⚡ Auto-updates every 10 seconds
-                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                        <div>
+                            <p className="eyebrow">Voting Queue</p>
+                            <h1>Review and vote on documents</h1>
+                            <p className="voting-subtitle">
+                                Earn {voteRewardLabel} per vote. Preview documents before making your decision.
+                            </p>
+                        </div>
+                        {onRefresh && (
+                            <button
+                                className="btn btn--ghost btn--small"
+                                onClick={onRefresh}
+                                disabled={documentsLoading}
+                                title="Refresh voting queue"
+                            >
+                                🔄 Refresh
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {!isRegistered && (
