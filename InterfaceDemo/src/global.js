@@ -4,9 +4,8 @@ const navLinks = [
     { path: "/", label: "Login", exact: true },
     { path: "/InterfaceDemo/profile", label: "Profile" },
     { path: "/InterfaceDemo/vote", label: "Vote" },
-    { path: "/InterfaceDemo/storage", label: "Storage" },
     { path: "/InterfaceDemo/history", label: "History" },
-    { path: "/InterfaceDemo/register", label: "Studocu" }
+    { path: "/InterfaceDemo/register", label: "Documents" }
 ];
 
 const shortenAddress = (value) => {
@@ -33,8 +32,8 @@ export const GlobalToolBar = ({
             <div className="global-nav__brand">
                 <div className="global-nav__logo">Ξ</div>
                 <div className="global-nav__meta">
-                    <span>Studocu OnChain</span>
-                    <strong>Interface Demo</strong>
+                    <span>Studocu OnChain dApp</span>
+                    <strong>Document Review</strong>
                 </div>
             </div>
             <div className="global-nav__links">

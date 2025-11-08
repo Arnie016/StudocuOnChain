@@ -38,15 +38,15 @@ export default function Login(props){
                 <div className="split-layout login-layout">
                     <div className="glass-panel login-hero">
                         <p className="eyebrow">Studocu OnChain</p>
-                        <h1>Ultra sleek interface for your EE4032 blockchain toolkit</h1>
+                        <h1>Document review workspace for your blockchain cohort</h1>
                         <p className="login-subtitle">
-                            Connect MetaMask, push values to the SimpleStorage contract, follow your
-                            history, and orchestrate the leader election demo from a single, polished cockpit.
+                            Connect MetaMask, register as a reviewer, submit password-protected PDFs, and
+                            coordinate approvals from one focused control panel.
                         </p>
                         <ul className="feature-list">
-                            <li>One-click wallet connection with live status</li>
-                            <li>Responsive panels for storage, history and leader flows</li>
-                            <li>New glassmorphism aesthetic with gradient accents</li>
+                            <li>One-click wallet connection with live status updates</li>
+                            <li>Voting dashboards with automatic event refresh and history</li>
+                            <li>Password-gated IPFS preview once access fees are paid</li>
                         </ul>
                         <div className="login-actions">
                             <button

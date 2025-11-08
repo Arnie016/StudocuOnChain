@@ -1,9 +1,13 @@
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import './registration.css';
 import '../../global.css';
 import { GlobalToolBar } from '../../global';
 import PDFViewer from './PDFViewer';
+import { buildIpfsUrl, shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
+
+const LOCAL_PREVIEW_PATH = '/demo/A0273649N_ArnavSalkade_hw5 (1).pdf';
+const LOCAL_PREVIEW_URL = `${process.env.PUBLIC_URL || ''}${LOCAL_PREVIEW_PATH}`;
 
 const formatTimestamp = (ts) => {
     if (!ts) {
@@ -66,12 +70,58 @@ export default function Registration(props) {
     const [ipfsHash, setIpfsHash] = useState('');
     const [password, setPassword] = useState('');
     const [flash, setFlash] = useState(null);
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [uploadingIPFS, setUploadingIPFS] = useState(false);
     const [viewingPDF, setViewingPDF] = useState(null);
+    const [viewerFallbackUrl, setViewerFallbackUrl] = useState(null);
+    const [viewerPassword, setViewerPassword] = useState(null);
+    const [accessPreviewInput, setAccessPreviewInput] = useState('');
+    const [accessHistory, setAccessHistory] = useState([]);
     const passwordInputRef = useRef(null);
+    const uploadSectionRef = useRef(null);
+
+    const openPdfViewer = (hash, docPassword = null) => {
+        if (!hash) {
+            return;
+        }
+        setViewerPassword(docPassword);
+        setViewingPDF(hash);
+        setViewerFallbackUrl(LOCAL_PREVIEW_URL);
+    };
+
+    const openUploadSection = () => {
+        if (uploadSectionRef.current) {
+            uploadSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    useEffect(() => {
+        setAccessPreviewInput('');
+    }, [lastAccess]);
+
+    useEffect(() => {
+        if (!lastAccess || !lastAccess.docId) {
+            return;
+        }
+
+        setAccessHistory((prev) => {
+            const exists = prev.some((item) => item.docId === lastAccess.docId && item.timestamp === lastAccess.timestamp);
+            if (exists) {
+                return prev;
+            }
+
+            const entry = {
+                docId: lastAccess.docId,
+                password: lastAccess.password,
+                ipfsHash: lastAccess.ipfsHash,
+                timestamp: lastAccess.timestamp
+            };
+
+            const updated = [entry, ...prev];
+            return updated.slice(0, 5);
+        });
+    }, [lastAccess]);
 
     const lowerAddress = address?.toLowerCase?.();
+    const lastAccessDownloadUrl = lastAccess?.ipfsHash ? buildIpfsUrl(lastAccess.ipfsHash) : '';
 
     const myUploads = useMemo(() => (
         Array.isArray(documents) && lowerAddress
@@ -109,111 +159,6 @@ export default function Registration(props) {
         }
     };
 
-    const handleFileSelect = (event) => {
-        const file = event.target.files[0];
-        if (!file) {
-            setSelectedFile(null);
-            return;
-        }
-
-        // Validate PDF
-        if (file.type !== 'application/pdf') {
-            setFlash({ type: 'danger', text: 'Please select a PDF file.' });
-            setSelectedFile(null);
-            event.target.value = '';
-            return;
-        }
-
-        // Check file size (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            setFlash({ type: 'danger', text: 'File size must be less than 10MB.' });
-            setSelectedFile(null);
-            event.target.value = '';
-            return;
-        }
-
-        setSelectedFile(file);
-        setIpfsHash(''); // Clear IPFS hash when file is selected
-        setFlash(null);
-    };
-
-    const uploadToIPFS = async (file, onProgress) => {
-        // Use ipfs-http-client with public nodes
-        // Note: Many public IPFS nodes don't allow uploads or require auth
-        // This will try multiple approaches
-        try {
-            const { create } = await import('ipfs-http-client');
-            
-            // Try public nodes that might allow uploads
-            const publicNodes = [
-                { url: 'https://ipfs.infura.io:5001/api/v0', name: 'Infura (requires auth)' },
-                { url: 'https://ipfs.io:5001/api/v0', name: 'IPFS.io public node' },
-                { url: 'https://dweb.link/api/v0', name: 'dweb.link' },
-                { url: 'https://ipfs-gateway.cloud:5001/api/v0', name: 'IPFS Gateway Cloud' }
-            ];
-
-            let lastError = null;
-            let errors = [];
-            
-            for (let i = 0; i < publicNodes.length; i++) {
-                const node = publicNodes[i];
-                try {
-                    if (onProgress) {
-                        onProgress(`Trying IPFS node ${i + 1}/${publicNodes.length} (${node.name})...`);
-                    }
-                    
-                    const ipfs = create({ 
-                        url: node.url,
-                        timeout: 30000 // 30 second timeout per node
-                    });
-                    
-                    if (onProgress) {
-                        onProgress(`Uploading to ${node.name}... This may take 30-60 seconds.`);
-                    }
-                    
-                    const result = await ipfs.add(file, { 
-                        cidVersion: 0,
-                        progress: (bytes) => {
-                            if (onProgress && file.size > 0) {
-                                const percent = Math.round((bytes / file.size) * 100);
-                                onProgress(`Uploading to ${node.name}... ${percent}%`);
-                            }
-                        }
-                    });
-                    
-                    const cid = result.cid?.toString() || result.path || result;
-                    if (onProgress) {
-                        onProgress(`Successfully uploaded! Hash: ${cid}`);
-                    }
-                    return cid;
-                } catch (nodeErr) {
-                    const errorMsg = nodeErr?.message || String(nodeErr);
-                    console.warn(`Node ${node.name} failed:`, errorMsg);
-                    errors.push(`${node.name}: ${errorMsg}`);
-                    lastError = nodeErr;
-                    // Try next node
-                    continue;
-                }
-            }
-            
-            // If all public nodes failed, provide helpful error message
-            const errorDetails = errors.join('; ');
-            throw new Error(
-                `IPFS upload failed. Public nodes may require authentication or don't allow uploads.\n\n` +
-                `Errors: ${errorDetails}\n\n` +
-                `Alternative: Upload your PDF to Storacha Console (console.storacha.network) or Pinata (pinata.cloud) and paste the IPFS hash manually.`
-            );
-        } catch (err) {
-            console.error('IPFS upload error:', err);
-            // Re-throw with better error message
-            if (err.message.includes('IPFS upload failed')) {
-                throw err;
-            }
-            throw new Error(`IPFS upload failed: ${err?.message || 'Unknown error'}. Try uploading to Storacha Console (console.storacha.network) and paste the hash manually.`);
-        }
-    };
-
-
     const handleUpload = async (event) => {
         if (event && event.preventDefault) {
         event.preventDefault();
@@ -227,46 +172,18 @@ export default function Registration(props) {
             return;
         }
 
-        let hash = ipfsHash;
-
-        // If file selected but no hash yet, upload to IPFS first
-        if (selectedFile && !hash) {
-            setUploadingIPFS(true);
-            setFlash({ type: 'info', text: 'Uploading file to IPFS... This may take 30-60 seconds.' });
-            
-            try {
-                hash = await uploadToIPFS(selectedFile, (message) => {
-                    setFlash({ type: 'info', text: message });
-                });
-                setIpfsHash(hash);
-                setFlash({ type: 'info', text: `File uploaded to IPFS. Submitting to blockchain...` });
-            } catch (err) {
-                setUploadingIPFS(false);
-                setFlash({ type: 'danger', text: err?.message || 'IPFS upload failed. You can paste an IPFS hash manually instead.' });
-                return;
-            }
-        }
-
-        if (!hash) {
-            setFlash({ type: 'danger', text: 'Please select a file to upload OR paste an IPFS hash.' });
-            setUploadingIPFS(false);
+        if (!ipfsHash) {
+            setFlash({ type: 'danger', text: 'Please enter an IPFS hash.' });
             return;
         }
 
-        // MetaMask opens here to pay 0.005 ETH deposit
         try {
-            await onUpload({ ipfsHash: hash, password });
+            await onUpload({ ipfsHash, password });
             setFlash({ type: 'success', text: 'Document uploaded. Five voters will be notified automatically.' });
             setIpfsHash('');
             setPassword('');
-            setSelectedFile(null);
-            // Reset file input
-            const fileInput = document.getElementById('fileInput');
-            if (fileInput) fileInput.value = '';
         } catch (err) {
             setFlash({ type: 'danger', text: err?.message || 'Upload failed.' });
-        } finally {
-            setUploadingIPFS(false);
         }
     };
 
@@ -288,6 +205,19 @@ export default function Registration(props) {
     const registrationFeeLabel = fees?.registrationEth ? `${fees.registrationEth} ETH` : '—';
     const uploadFeeLabel = fees?.uploadEth ? `${fees.uploadEth} ETH` : '—';
     const accessFeeLabel = fees?.accessEth ? `${fees.accessEth} ETH` : '—';
+
+    const formatIpfsLabel = (hash) => {
+        if (!hash) {
+            return 'IPFS hash not set';
+        }
+        const pretty = shortIpfsHash(hash);
+        return pretty || 'IPFS hash not set';
+    };
+
+    const fullHashTitle = (hash) => {
+        const normalized = normalizeIpfsInput(hash);
+        return normalized || 'IPFS hash not set';
+    };
 
     const renderDocStatus = (doc) => {
         const progress = doc.votingProgress || { totalVotes: 0, approvals: 0, requiredVoters: 5 };
@@ -317,7 +247,7 @@ export default function Registration(props) {
                 <span className="studocu-meta" style={{ fontSize: '0.85rem' }}>
                     {progress.totalVotes}/{progress.requiredVoters} votes ({progress.approvals} approvals)
                 </span>
-            </div>
+                    </div>
         );
     };
 
@@ -334,30 +264,32 @@ export default function Registration(props) {
                     <span>Once uploaded, approvals and rejections appear here.</span>
                 </div>
             ) : (
-                myUploads.map((doc) => (
+                myUploads.map((doc) => {
+                    const downloadUrl = buildIpfsUrl(doc.ipfsHash);
+                    return (
                     <div className="studocu-upload-card" key={`upload-${doc.id}`}>
                         <div className="studocu-vote-card-content">
                             <span className="eyebrow">Document #{doc.id}</span>
-                            <h4 className="studocu-ipfs-hash" title={doc.ipfsHash || 'IPFS hash not set'}>
-                                {doc.ipfsHash ? (doc.ipfsHash.length > 42 ? `${doc.ipfsHash.substring(0, 20)}...${doc.ipfsHash.substring(doc.ipfsHash.length - 10)}` : doc.ipfsHash) : 'IPFS hash not set'}
+                            <h4 className="studocu-ipfs-hash" title={fullHashTitle(doc.ipfsHash)}>
+                                {formatIpfsLabel(doc.ipfsHash)}
                             </h4>
                             <p className="studocu-meta">Submitted {formatTimestamp(doc.timestamp)}</p>
                             {doc.ipfsHash && (
                                 <div className="studocu-vote-links">
-                                    <button
-                                        className="btn btn--ghost btn--small"
-                                        onClick={() => setViewingPDF(doc.ipfsHash)}
-                                    >
-                                        👁️ Preview PDF
-                                    </button>
-                                    <a
-                                        href={`https://ipfs.io/ipfs/${doc.ipfsHash}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="btn btn--ghost btn--small"
-                                    >
-                                        📥 Download
-                                    </a>
+                                    {downloadUrl ? (
+                                        <a
+                                            href={downloadUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn btn--ghost btn--small"
+                                        >
+                                            📥 Download
+                                        </a>
+                                    ) : (
+                                        <span className="studocu-meta" style={{ fontSize: '0.8rem' }}>
+                                            Invalid IPFS link
+                                        </span>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -365,7 +297,8 @@ export default function Registration(props) {
                             {renderDocStatus(doc)}
                         </div>
                     </div>
-                ))
+                );
+                })
             )}
         </div>
     );
@@ -384,12 +317,13 @@ export default function Registration(props) {
             ) : (
                 approvedDocs.map((doc) => {
                     const progress = doc.votingProgress || { totalVotes: 0, approvals: 0, requiredVoters: 5 };
+                    const downloadUrl = buildIpfsUrl(doc.ipfsHash);
                     return (
                     <div className="studocu-approved-card" key={`approved-${doc.id}`}>
                             <div className="studocu-vote-card-content">
                             <span className="eyebrow">Document #{doc.id}</span>
-                                <h4 className="studocu-ipfs-hash" title={doc.ipfsHash || 'IPFS hash not set'}>
-                                    {doc.ipfsHash ? (doc.ipfsHash.length > 42 ? `${doc.ipfsHash.substring(0, 20)}...${doc.ipfsHash.substring(doc.ipfsHash.length - 10)}` : doc.ipfsHash) : 'IPFS hash not set'}
+                                <h4 className="studocu-ipfs-hash" title={fullHashTitle(doc.ipfsHash)}>
+                                    {formatIpfsLabel(doc.ipfsHash)}
                                 </h4>
                                 <p className="studocu-meta">Uploader {doc.uploader ? `${doc.uploader.substring(0, 6)}...${doc.uploader.substring(doc.uploader.length - 4)}` : 'Unknown'}</p>
                                 <div className="studocu-vote-progress" style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
@@ -402,20 +336,20 @@ export default function Registration(props) {
                                 </div>
                                 {doc.ipfsHash && (
                                     <div className="studocu-vote-links">
-                                        <button
-                                            className="btn btn--ghost btn--small"
-                                            onClick={() => setViewingPDF(doc.ipfsHash)}
-                                        >
-                                            👁️ Preview PDF
-                                        </button>
-                                        <a
-                                            href={`https://ipfs.io/ipfs/${doc.ipfsHash}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn btn--ghost btn--small"
-                                        >
-                                            📥 Download
-                                        </a>
+                                        {downloadUrl ? (
+                                            <a
+                                                href={downloadUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn btn--ghost btn--small"
+                                            >
+                                                📥 Download
+                                            </a>
+                                        ) : (
+                                            <span className="studocu-meta" style={{ fontSize: '0.8rem' }}>
+                                                Invalid IPFS link
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                         </div>
@@ -443,12 +377,21 @@ export default function Registration(props) {
                 isConnected={toolbarProps.isConnected}
             />
             <section className="page-section studocu-section">
-                <div className="section-heading">
+                <div className="section-heading studocu-heading">
+                    <div>
                     <p className="eyebrow">Studocu OnChain</p>
-                    <h1>Upload and manage documents</h1>
+                        <h1>Upload and manage documents</h1>
                     <p className="registration-subtitle">
-                        Upload password-protected PDFs for verification. Voters will be randomly selected to review your documents.
+                            Upload password-protected PDFs for verification. Voters will be randomly selected to review your documents.
                     </p>
+                    </div>
+                    <button
+                        type="button"
+                        className="btn btn--primary studocu-heading-action"
+                        onClick={openUploadSection}
+                    >
+                        ➕ Upload
+                    </button>
                 </div>
 
                 {flash && (
@@ -512,7 +455,7 @@ export default function Registration(props) {
                     </div>
                 </div>
 
-                    <div className="glass-panel studocu-upload">
+                <div className="glass-panel studocu-upload" ref={uploadSectionRef}>
                     <div className="studocu-upload-header">
                         <div>
                             <h3>Upload new document</h3>
@@ -521,9 +464,9 @@ export default function Registration(props) {
                             </p>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <span className="status-chip status-chip--neutral">
-                                {pendingDocs.length} pending · {approvedDocs.length} approved
-                            </span>
+                        <span className="status-chip status-chip--neutral">
+                            {pendingDocs.length} pending · {approvedDocs.length} approved
+                        </span>
                             {onRefresh && (
                                 <button
                                     className="btn btn--ghost btn--small"
@@ -551,48 +494,24 @@ export default function Registration(props) {
                             }
                         }}
                     >
-                        <label htmlFor="ipfsHash">IPFS Hash or File</label>
-                        <div className="studocu-upload-combo">
-                            <input
-                                id="ipfsHash"
-                                type="text"
-                                placeholder="Paste IPFS hash (Qm...) or upload file"
-                                value={ipfsHash || ''}
-                                onChange={(e) => {
-                                    setIpfsHash(e.target.value);
-                                    if (e.target.value) setSelectedFile(null);
-                                }}
-                                disabled={uploadingIPFS || !!selectedFile}
+                        <label htmlFor="ipfsHashInput">IPFS Hash (required)</label>
+                        <div className="studocu-hash-row">
+                        <input
+                                id="ipfsHashInput"
+                            type="text"
+                                placeholder="bafy... or Qm..."
+                            value={ipfsHash}
+                                onChange={(e) => setIpfsHash(e.target.value.trim())}
                                 autoComplete="off"
-                                style={{ flex: 1 }}
                             />
-                            <span className="studocu-upload-or">or</span>
-                            <label htmlFor="fileInput" className="btn btn--ghost btn--small" style={{ margin: 0, cursor: uploadingIPFS || !!ipfsHash ? 'not-allowed' : 'pointer' }}>
-                                📎 Choose File
-                            </label>
-                            <input
-                                id="fileInput"
-                                type="file"
-                                accept="application/pdf"
-                                onChange={handleFileSelect}
-                                disabled={uploadingIPFS || !!ipfsHash}
-                                style={{ display: 'none' }}
-                            />
+                            <button
+                                className="btn btn--primary"
+                                type="submit"
+                                disabled={!canTransact || !isRegistered || isBusy('upload') || !password || !ipfsHash}
+                            >
+                                Upload
+                            </button>
                         </div>
-                        {(ipfsHash || selectedFile) && (
-                            <div className="studocu-file-info" style={{ marginTop: '0.5rem' }}>
-                                {ipfsHash && !selectedFile && (
-                                    <span className="status-chip status-chip--success">
-                                        ✅ Using IPFS Hash: {ipfsHash.substring(0, 20)}...{ipfsHash.substring(ipfsHash.length - 10)}
-                                    </span>
-                                )}
-                                {selectedFile && (
-                                    <span className="status-chip status-chip--success">
-                                        ✓ {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                                    </span>
-                                )}
-                            </div>
-                        )}
                         <label htmlFor="docPassword">Document Password (required)</label>
                         <input
                             ref={passwordInputRef}
@@ -610,22 +529,13 @@ export default function Registration(props) {
                                     e.stopPropagation();
                                 }
                             }}
-                            disabled={isBusy('upload') || uploadingIPFS}
+                            disabled={isBusy('upload')}
                             autoComplete="off"
                         />
                         <p className="studocu-hint-small">
                             The password is required by the contract. It will be stored on-chain and can be accessed by voters after approval.
                         </p>
-                        <div className="studocu-upload-actions">
-                            <button
-                                className="btn btn--primary"
-                                type="submit"
-                                disabled={!canTransact || !isRegistered || isBusy('upload') || !password || (!selectedFile && !ipfsHash) || uploadingIPFS}
-                            >
-                                {uploadingIPFS ? 'Uploading to IPFS...' : 
-                                 isBusy('upload') ? 'Transaction Pending...' : 
-                                 `Upload Document (${uploadFeeLabel})`}
-                            </button>
+                        <div className="studocu-upload-messages">
                             {!isRegistered && (
                                 <span className="status-chip status-chip--pending">
                                     Register first to submit documents
@@ -636,21 +546,12 @@ export default function Registration(props) {
                                     ⏳ Transaction pending... Waiting for confirmation
                                 </span>
                             )}
-                        </div>
-                        {uploadingIPFS && (
-                            <div className="studocu-file-info">
+                            {!isBusy('upload') && isRegistered && canTransact && (
                                 <span className="status-chip status-chip--neutral">
-                                    ⏳ Uploading to IPFS... Please wait (this may take 30-60 seconds). MetaMask will open after upload completes.
+                                    Upload fee: {uploadFeeLabel}
                                 </span>
-                </div>
-                        )}
-                        {isBusy('upload') && !uploadingIPFS && (
-                            <div className="studocu-file-info">
-                                <span className="status-chip status-chip--pending">
-                                    ⏳ Transaction submitted... Please confirm in MetaMask. Your document will appear in "Your uploads" below once confirmed.
-                                </span>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </form>
 
                     <div className="studocu-upload-history">
@@ -675,19 +576,85 @@ export default function Registration(props) {
                                 <code>{lastAccess.password}</code>
                             </div>
                             {lastAccess.ipfsHash && (
-                                <div>
-                                    <span>IPFS Hash:</span>
-                                    <code className="studocu-ipfs-hash-small">{lastAccess.ipfsHash}</code>
-                                </div>
+                                <>
+                                    <div>
+                                        <span>IPFS Hash:</span>
+                                        <code className="studocu-ipfs-hash-small">{lastAccess.ipfsHash}</code>
+                                    </div>
+                        <div className="studocu-access-links">
+                                        {lastAccessDownloadUrl && (
+                                            <a
+                                                href={lastAccessDownloadUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn btn--ghost btn--small"
+                                            >
+                                                📥 Download PDF
+                                            </a>
+                                        )}
+                                        <div className="studocu-access-password">
+                                            <input
+                                                type="text"
+                                                placeholder="Enter password to preview"
+                                                value={accessPreviewInput}
+                                                onChange={(e) => setAccessPreviewInput(e.target.value)}
+                                                className="studocu-access-input"
+                                            />
+                                            <button
+                                                type="button"
+                                                className="btn btn--ghost btn--small"
+                                                onClick={() => openPdfViewer(lastAccess.ipfsHash, accessPreviewInput)}
+                                                disabled={!accessPreviewInput}
+                                            >
+                                                👁️ Preview
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
                             )}
                         </div>
+                    </div>
+                )}
+
+                {accessHistory.length > 0 && (
+                    <div className="glass-panel studocu-access-history">
+                        <h3>Recent Access History</h3>
+                        <ul>
+                            {accessHistory.map((entry) => (
+                                <li key={`${entry.docId}-${entry.timestamp}`} className="studocu-access-history-item">
+                                    <div>
+                                        <span>Doc #{entry.docId}</span>
+                                        <code className="studocu-ipfs-hash-small">{entry.ipfsHash}</code>
+                                    </div>
+                                    <div className="studocu-access-history-meta">
+                                        <span>Retrieved {new Date(entry.timestamp).toLocaleString()}</span>
+                                    </div>
+                                    <div className="studocu-access-history-actions">
+                                        <button
+                                            type="button"
+                                            className="btn btn--ghost btn--small"
+                                            onClick={() => openPdfViewer(entry.ipfsHash, entry.password)}
+                                        >
+                                            👁️ Preview
+                                        </button>
+                                        <span className="studocu-access-history-password">🔐 {entry.password}</span>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 )}
             </section>
             {viewingPDF && (
                 <PDFViewer
                     ipfsHash={viewingPDF}
-                    onClose={() => setViewingPDF(null)}
+                    pdfPassword={viewerPassword || undefined}
+                    fallbackUrl={viewerFallbackUrl}
+                    onClose={() => {
+                        setViewingPDF(null);
+                        setViewerPassword(null);
+                        setViewerFallbackUrl(null);
+                    }}
                 />
             )}
         </div>

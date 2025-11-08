@@ -6,12 +6,10 @@ import Web3 from "web3";
 import "./App.css";
 import Login from "./components/login/login";
 import Profile from "./components/profile/profile";
-import Storage from "./components/storage/storage";
 import History from "./components/history/history";
 import Leader from "./components/leader/leader";
 import Registration from "./components/registration/registration";
 import Voting from "./components/registration/Voting";
-import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./contracts/config";
 import { CONTRACT_ABI_2, CONTRACT_ADDRESS_2 } from "./contracts/config_2";
 import { CONTRACT_ABI_STUDOCU, CONTRACT_ADDRESS_STUDOCU } from "./contracts/studocu_config";
 
@@ -52,7 +50,6 @@ export default function App() {
     const [ethereumProvider, setEthereumProvider] = useState(null);
     const [provider, setProvider] = useState(null);
     const [web3, setWeb3] = useState(null);
-    const [storageContract, setStorageContract] = useState(null);
     const [leaderContract, setLeaderContract] = useState(null);
     const [studocuContract, setStudocuContract] = useState(null);
 
@@ -63,9 +60,6 @@ export default function App() {
     const [isConnecting, setIsConnecting] = useState(false);
     const [connectError, setConnectError] = useState(null);
 
-    const [storedPending, setStoredPending] = useState(false);
-    const [storedDone, setStoredDone] = useState(false);
-    const [showVal, setShowVal] = useState(0);
 
     const [historyRecord, setHistoryRecord] = useState([]);
     const maxRecordLen = 50;
@@ -100,6 +94,7 @@ export default function App() {
     const [studocuDocs, setStudocuDocs] = useState([]);
     const [studocuDocsLoading, setStudocuDocsLoading] = useState(false);
     const studocuDocsLoadingRef = useRef(false);
+    const studocuEventCooldownRef = useRef(0);
     const [studocuError, setStudocuError] = useState(null);
     const [studocuPendingAction, setStudocuPendingAction] = useState(null);
     const [studocuLastAccess, setStudocuLastAccess] = useState(null);
@@ -133,14 +128,12 @@ export default function App() {
     // Build contract instances once web3 is ready
     useEffect(() => {
         if (!web3) {
-            setStorageContract(null);
             setLeaderContract(null);
             setStudocuContract(null);
             setStudocuReady(false);
             return;
         }
 
-        setStorageContract(new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS));
         setLeaderContract(new web3.eth.Contract(CONTRACT_ABI_2, CONTRACT_ADDRESS_2));
 
         if (isValidAddress(CONTRACT_ADDRESS_STUDOCU)) {
@@ -230,20 +223,6 @@ export default function App() {
             setIsConnecting(false);
         }
     }, [ethereumProvider, handleAccountsChanged, navigate]);
-
-    const storeData = useCallback(async (inputVal) => {
-        if (!storageContract || !address) {
-            throw new Error("Storage contract is not ready");
-        }
-        return storageContract.methods.set(inputVal).send({ from: address });
-    }, [storageContract, address]);
-
-    const getData = useCallback(async () => {
-        if (!storageContract) {
-            throw new Error("Storage contract is not ready");
-        }
-        return storageContract.methods.get().call();
-    }, [storageContract]);
 
     const getLeader = useCallback(async () => {
         if (!leaderContract) {
@@ -667,7 +646,7 @@ export default function App() {
         } finally {
             setStudocuPendingAction(null);
         }
-    }, [studocuContract, address, pushHistoryRecord, refreshStudocuDocuments]);
+    }, [studocuContract, address, pushHistoryRecord, refreshStudocuDocuments, refreshStudocuSummary]);
 
     const accessStudocuDocument = useCallback(async (docId) => {
         if (!studocuContract || !address) {
@@ -812,6 +791,78 @@ export default function App() {
 
     useEffect(() => {
         if (!studocuContract) {
+            return undefined;
+        }
+
+        let cancelled = false;
+
+        const triggerRefresh = () => {
+            if (cancelled) {
+                return;
+            }
+
+            const now = Date.now();
+            const last = studocuEventCooldownRef.current || 0;
+            if (now - last < 4000) {
+                return;
+            }
+
+            studocuEventCooldownRef.current = now;
+            refreshStudocuDocuments();
+            refreshStudocuSummary();
+        };
+
+        const subscribe = (eventName) => {
+            try {
+                return studocuContract.events[eventName]({})
+                    .on("data", () => {
+                        console.debug(`[Studocu] ${eventName} event received`);
+                        triggerRefresh();
+                    })
+                    .on("error", (err) => {
+                        console.warn(`[Studocu] ${eventName} listener error`, err);
+                    });
+            } catch (err) {
+                console.warn(`[Studocu] Failed to subscribe to ${eventName}`, err);
+                return null;
+            }
+        };
+
+        const subscriptions = [
+            "DocumentUploaded",
+            "VoteCast",
+            "DocumentApproved",
+            "DocumentRejected",
+            "DocumentResult"
+        ].map(subscribe);
+
+        return () => {
+            cancelled = true;
+            subscriptions.forEach((sub) => {
+                try {
+                    sub?.unsubscribe?.();
+                } catch (err) {
+                    console.warn("Failed to unsubscribe Studocu event", err);
+                }
+            });
+        };
+    }, [studocuContract, refreshStudocuDocuments, refreshStudocuSummary]);
+
+    useEffect(() => {
+        if (!studocuContract) {
+            return undefined;
+        }
+
+        const interval = setInterval(() => {
+            refreshStudocuDocuments();
+            refreshStudocuSummary();
+        }, 15000);
+
+        return () => clearInterval(interval);
+    }, [studocuContract, refreshStudocuDocuments, refreshStudocuSummary]);
+
+    useEffect(() => {
+        if (!studocuContract) {
             setStudocuReady(false);
             setStudocuDocs([]);
             setStudocuRegistered(false);
@@ -834,41 +885,6 @@ export default function App() {
     useEffect(() => {
         setStudocuLastAccess(null);
     }, [address]);
-
-    const storedValUpdate = useCallback(async () => {
-        const inputVal = document.getElementById("inputVal")?.value;
-        setStoredPending(false);
-        setStoredDone(false);
-
-        if (!inputVal || !inputVal.length) {
-            pushHistoryRecord("store", inputVal, "null");
-            return;
-        }
-
-        setStoredPending(true);
-
-        try {
-            const detail = await storeData(inputVal);
-            pushHistoryRecord("store", inputVal, detail);
-            setStoredDone(true);
-        } catch (err) {
-            console.error("Store transaction failed", err);
-            pushHistoryRecord("store", inputVal, "null");
-            setStoredDone(false);
-        } finally {
-            setStoredPending(false);
-        }
-    }, [pushHistoryRecord, storeData]);
-
-    const showValUpdate = useCallback(async () => {
-        try {
-            const ans = await getData();
-            setShowVal(ans);
-            pushHistoryRecord("get", ans);
-        } catch (err) {
-            console.error("Failed to get value", err);
-        }
-    }, [getData, pushHistoryRecord]);
 
     const showLeaderUpdate = useCallback(async () => {
         try {
@@ -904,18 +920,6 @@ export default function App() {
             address={address}
             networkType={network}
             balance={balance}
-            toolbarProps={toolbarProps}
-        />
-    );
-
-    const StorageDisplay = () => (
-        <Storage
-            isConnected={isConnected}
-            storeValHandle={storedValUpdate}
-            showValHandle={showValUpdate}
-            showVal={showVal}
-            storedPending={storedPending}
-            storedDone={storedDone}
             toolbarProps={toolbarProps}
         />
     );
@@ -993,7 +997,6 @@ export default function App() {
                 <Route path="/EE4032" element={<Navigate to="/" replace />} />
                 <Route path="/InterfaceDemo/profile" element={<ProfileDisplay />} />
                 <Route path="/InterfaceDemo/vote" element={<VotingDisplay />} />
-                <Route path="/InterfaceDemo/storage" element={<StorageDisplay />} />
                 <Route path="/InterfaceDemo/history" element={<HistoryDisplay />} />
                 <Route path="/InterfaceDemo/leader" element={<LeaderDisplay />} />
                 <Route path="/InterfaceDemo/register" element={<RegistrationDisplay />} />

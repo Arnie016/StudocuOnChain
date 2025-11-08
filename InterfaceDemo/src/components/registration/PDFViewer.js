@@ -1,61 +1,82 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import './PDFViewer.css';
+import { buildGatewayUrls, buildIpfsUrl } from '../../utils/ipfs';
 
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-export default function PDFViewer({ ipfsHash, onClose }) {
+export default function PDFViewer({ ipfsHash, onClose, pdfPassword, fallbackUrl }) {
     const [numPages, setNumPages] = useState(null);
     const [pageNumber, setPageNumber] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [gatewayIndex, setGatewayIndex] = useState(0);
-    const [loadTimeout, setLoadTimeout] = useState(null);
+    const loadTimeoutRef = useRef(null);
 
-    // IPFS gateway URL - try multiple gateways for reliability
-    const ipfsGateways = [
-        { url: `https://ipfs.io/ipfs/${ipfsHash}`, name: 'IPFS.io' },
-        { url: `https://gateway.pinata.cloud/ipfs/${ipfsHash}`, name: 'Pinata' },
-        { url: `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`, name: 'Cloudflare' },
-        { url: `https://dweb.link/ipfs/${ipfsHash}`, name: 'dweb.link' },
-        { url: `https://ipfs.infura.io/ipfs/${ipfsHash}`, name: 'Infura' }
-    ];
+    const ipfsGateways = useMemo(() => buildGatewayUrls(ipfsHash), [ipfsHash]);
+    const defaultDownloadUrl = useMemo(() => buildIpfsUrl(ipfsHash), [ipfsHash]);
+    const pinataDownloadUrl = useMemo(() => buildIpfsUrl(ipfsHash, 'https://gateway.pinata.cloud/ipfs/'), [ipfsHash]);
+    const sources = useMemo(() => {
+        const list = [...ipfsGateways];
+        if (fallbackUrl) {
+            list.push({ name: 'Local preview', url: fallbackUrl });
+        }
+        return list;
+    }, [ipfsGateways, fallbackUrl]);
+    const currentSource = sources[gatewayIndex];
 
-    const pdfUrl = ipfsGateways[gatewayIndex]?.url;
+    useEffect(() => {
+        if (gatewayIndex >= sources.length) {
+            setGatewayIndex(0);
+        }
+    }, [gatewayIndex, sources.length]);
 
     // Reset when hash changes
     useEffect(() => {
         setGatewayIndex(0);
         setNumPages(null);
         setPageNumber(1);
+
+        if (loadTimeoutRef.current) {
+            clearTimeout(loadTimeoutRef.current);
+            loadTimeoutRef.current = null;
+        }
+
+        if (!ipfsHash && !fallbackUrl) {
+            setLoading(false);
+            setError('No IPFS hash provided.');
+            return;
+        }
+
+        if (!sources.length) {
+            setLoading(false);
+            setError('Invalid document reference.');
+            return;
+        }
+
         setLoading(true);
         setError(null);
-        
-        // Clear any existing timeout
-        if (loadTimeout) {
-            clearTimeout(loadTimeout);
-        }
-        
-        // Set a timeout to detect if loading is stuck (15 seconds)
-        const timeout = setTimeout(() => {
+
+        loadTimeoutRef.current = setTimeout(() => {
             setError('PDF loading is taking too long. The file may not be accessible via this gateway or may have CORS restrictions. Try downloading it instead or use the "Open in new tab" link.');
             setLoading(false);
-        }, 15000); // 15 second timeout
-        
-        setLoadTimeout(timeout);
-        
+        }, 15000);
+
         return () => {
-            if (timeout) clearTimeout(timeout);
+            if (loadTimeoutRef.current) {
+                clearTimeout(loadTimeoutRef.current);
+                loadTimeoutRef.current = null;
+            }
         };
-    }, [ipfsHash]);
+    }, [ipfsHash, sources.length, fallbackUrl]);
 
     function onDocumentLoadSuccess({ numPages }) {
-        if (loadTimeout) {
-            clearTimeout(loadTimeout);
-            setLoadTimeout(null);
+        if (loadTimeoutRef.current) {
+            clearTimeout(loadTimeoutRef.current);
+            loadTimeoutRef.current = null;
         }
         setNumPages(numPages);
         setLoading(false);
@@ -63,17 +84,17 @@ export default function PDFViewer({ ipfsHash, onClose }) {
     }
 
     function onDocumentLoadError(error) {
-        if (loadTimeout) {
-            clearTimeout(loadTimeout);
-            setLoadTimeout(null);
+        if (loadTimeoutRef.current) {
+            clearTimeout(loadTimeoutRef.current);
+            loadTimeoutRef.current = null;
         }
         
-        console.error(`PDF load error from ${ipfsGateways[gatewayIndex]?.name}:`, error);
+        console.error(`PDF load error from ${currentSource?.name || 'unknown source'}:`, error);
         
         // Try next gateway
-        if (gatewayIndex < ipfsGateways.length - 1) {
+        if (gatewayIndex < sources.length - 1) {
             const nextIndex = gatewayIndex + 1;
-            setError(`Trying gateway ${nextIndex + 1}/${ipfsGateways.length} (${ipfsGateways[nextIndex]?.name})...`);
+            setError(`Trying gateway ${nextIndex + 1}/${sources.length} (${sources[nextIndex]?.name})...`);
             setTimeout(() => {
                 setGatewayIndex(nextIndex);
                 setLoading(true);
@@ -81,7 +102,7 @@ export default function PDFViewer({ ipfsHash, onClose }) {
             }, 500);
         } else {
             setLoading(false);
-            setError(`All ${ipfsGateways.length} IPFS gateways failed. The file may not be accessible via these gateways. Click "Download" to access it directly.`);
+            setError(`All available sources failed. The file may not be accessible via these gateways. Click "Download" to access it directly.`);
         }
     }
 
@@ -116,18 +137,20 @@ export default function PDFViewer({ ipfsHash, onClose }) {
                 <div className="pdf-viewer-content">
                     {loading && (
                         <div className="pdf-loading">
-                            <p>Loading PDF from {ipfsGateways[gatewayIndex]?.name}...</p>
+                            <p>Loading PDF from {currentSource?.name || 'gateway'}...</p>
                             <p className="pdf-error-hint" style={{ marginTop: '1rem', fontSize: '0.85rem' }}>
                                 If this takes too long, the file may not be accessible via this gateway.
                                 <br />
-                                <a 
-                                    href={`https://ipfs.io/ipfs/${ipfsHash}`} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    style={{ color: 'var(--accent-primary)', textDecoration: 'underline', marginTop: '0.5rem', display: 'inline-block' }}
-                                >
-                                    Try opening in new tab instead
-                                </a>
+                                {defaultDownloadUrl && (
+                                    <a 
+                                        href={defaultDownloadUrl}
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        style={{ color: 'var(--accent-primary)', textDecoration: 'underline', marginTop: '0.5rem', display: 'inline-block' }}
+                                    >
+                                        Try opening in new tab instead
+                                    </a>
+                                )}
                             </p>
                             {error && <p className="pdf-error-hint">{error}</p>}
                         </div>
@@ -136,39 +159,44 @@ export default function PDFViewer({ ipfsHash, onClose }) {
                         <div className="pdf-error">
                             <p>{error}</p>
                             <div className="pdf-error-actions">
-                                <a 
-                                    href={`https://ipfs.io/ipfs/${ipfsHash}`} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="btn btn--primary"
-                                >
-                                    Try in new tab (IPFS.io)
-                                </a>
-                                <a 
-                                    href={`https://gateway.pinata.cloud/ipfs/${ipfsHash}`} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="btn btn--ghost"
-                                >
-                                    Try Pinata gateway
-                                </a>
+                                {defaultDownloadUrl && (
+                                    <a 
+                                        href={defaultDownloadUrl}
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="btn btn--primary"
+                                    >
+                                        Try in new tab (IPFS.io)
+                                    </a>
+                                )}
+                                {pinataDownloadUrl && pinataDownloadUrl !== defaultDownloadUrl && (
+                                    <a 
+                                        href={pinataDownloadUrl}
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="btn btn--ghost"
+                                    >
+                                        Try Pinata gateway
+                                    </a>
+                                )}
                             </div>
                             <p className="pdf-error-hint">
                                 Note: If the PDF was just uploaded, it may take a few minutes to propagate across IPFS gateways.
                             </p>
                         </div>
                     )}
-                    {!error && !loading && pdfUrl && (
+                    {!error && !loading && currentSource?.url && (
                         <Document
-                            key={`${pdfUrl}-${gatewayIndex}`}
+                            key={`${currentSource.url}-${gatewayIndex}`}
                             file={{
-                                url: pdfUrl,
+                                url: currentSource.url,
                                 httpHeaders: {},
                                 withCredentials: false,
+                                password: pdfPassword || undefined,
                             }}
                             onLoadSuccess={onDocumentLoadSuccess}
                             onLoadError={onDocumentLoadError}
-                            loading={<div className="pdf-loading">Loading PDF from {ipfsGateways[gatewayIndex]?.name}...</div>}
+                            loading={<div className="pdf-loading">Loading PDF from {currentSource?.name || 'gateway'}...</div>}
                             options={{
                                 cMapUrl: `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/cmaps/`,
                                 cMapPacked: true,
@@ -177,16 +205,18 @@ export default function PDFViewer({ ipfsHash, onClose }) {
                             }}
                             error={
                                 <div className="pdf-error">
-                                    <p>Failed to load PDF from {ipfsGateways[gatewayIndex]?.name}</p>
+                                    <p>Failed to load PDF from {currentSource?.name || 'gateway'}</p>
                                     <div className="pdf-error-actions">
-                                        <a 
-                                            href={`https://ipfs.io/ipfs/${ipfsHash}`} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="btn btn--primary"
-                                        >
-                                            Open in new tab
-                                        </a>
+                                        {(defaultDownloadUrl || pinataDownloadUrl) && (
+                                            <a 
+                                                href={defaultDownloadUrl || pinataDownloadUrl}
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="btn btn--primary"
+                                            >
+                                                Open in new tab
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
                             }

@@ -14,6 +14,18 @@
     margin-top: 0.75rem;
 }
 
+.studocu-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.studocu-heading-action {
+    white-space: nowrap;
+}
+
 .studocu-flash {
     margin-top: -0.5rem;
 }
@@ -132,11 +144,28 @@
     font-size: 0.95rem;
 }
 
+.studocu-hash-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.studocu-hash-row input {
+    flex: 1;
+}
+
 .studocu-upload-actions {
     display: flex;
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+}
+
+.studocu-upload-messages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .studocu-file-info {
@@ -151,26 +180,15 @@
     width: 100%;
 }
 
-.studocu-upload-combo input[type="text"] {
-    flex: 1;
-    margin: 0;
-}
-
-.studocu-upload-or {
-    color: var(--text-soft);
-    font-size: 0.9rem;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
 .studocu-upload-combo label.btn {
     flex-shrink: 0;
     white-space: nowrap;
 }
 
-.studocu-upload-combo label.btn:has(input:disabled) {
-    opacity: 0.5;
+.studocu-upload-combo label.btn[aria-disabled="true"] {
+    opacity: 0.6;
     cursor: not-allowed;
+    pointer-events: none;
 }
 
 .studocu-upload-divider {
@@ -366,6 +384,68 @@
     border-radius: var(--radius-sm);
 }
 
+.studocu-access-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.studocu-access-password {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.studocu-access-input {
+    flex: 1 1 240px;
+    min-width: 200px;
+}
+
+.studocu-access-history {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.studocu-access-history ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.studocu-access-history-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.studocu-access-history-meta {
+    color: var(--text-soft);
+    font-size: 0.85rem;
+}
+
+.studocu-access-history-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.studocu-access-history-password {
+    font-family: 'Space Grotesk', monospace;
+    letter-spacing: 0.05em;
+}
+
 .studocu-ipfs-hash-small {
     font-size: 0.9rem !important;
 }
@@ -398,6 +478,16 @@
     .studocu-upload-actions {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .studocu-access-password {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .studocu-hash-row {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 

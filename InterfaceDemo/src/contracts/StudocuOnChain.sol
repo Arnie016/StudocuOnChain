@@ -129,10 +129,11 @@ contract StudocuOnChain is Ownable, ReentrancyGuard {
     }
     
     // Access approved document
-    function accessDocument(uint256 docId) external payable validDocument(docId) {
+    function accessDocument(uint256 docId) external payable validDocument(docId) nonReentrant {
         require(msg.value == ACCESS_FEE, "Must pay access fee");
         Document storage doc = documents[docId];
         require(doc.approved, "Document not approved");
+        payable(doc.uploader).transfer(msg.value);
         
         emit DocumentAccessed(docId, msg.sender);
     }

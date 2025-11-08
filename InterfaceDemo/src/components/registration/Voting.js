@@ -5,6 +5,7 @@ import '../../global.css';
 import { GlobalToolBar } from '../../global';
 import PDFViewer from './PDFViewer';
 import Avatar from './Avatar';
+import { buildIpfsUrl, shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
 
 const formatTimestamp = (ts) => {
     if (!ts) {
@@ -61,6 +62,19 @@ export default function Voting(props) {
     const canTransact = contractReady && isConnected;
     const voteRewardLabel = fees?.voteRewardEth ? `${fees.voteRewardEth} ETH` : '—';
 
+    const formatIpfsLabel = (hash) => {
+        if (!hash) {
+            return 'IPFS hash not set';
+        }
+        const pretty = shortIpfsHash(hash);
+        return pretty || 'IPFS hash not set';
+    };
+
+    const fullHashTitle = (hash) => {
+        const normalized = normalizeIpfsInput(hash);
+        return normalized || 'IPFS hash not set';
+    };
+
     const handleVote = async (docId, approval) => {
         if (!onVote) {
             return;
@@ -87,6 +101,7 @@ export default function Voting(props) {
                 awaitingVote.map((doc) => {
                     const progress = doc.votingProgress || { totalVotes: 0, approvals: 0, requiredVoters: 5 };
                     const timeLeft = doc.timeRemaining || 0;
+                    const downloadUrl = buildIpfsUrl(doc.ipfsHash);
                     const formatTimeRemaining = (seconds) => {
                         if (seconds === 0) return 'Voting closed';
                         const days = Math.floor(seconds / 86400);
@@ -99,8 +114,8 @@ export default function Voting(props) {
                         <div className="studocu-vote-card" key={`vote-${doc.id}`}>
                             <div className="studocu-vote-card-content">
                                 <span className="eyebrow">Document #{doc.id}</span>
-                                <h4 className="studocu-ipfs-hash" title={doc.ipfsHash || 'IPFS hash not set'}>
-                                    {doc.ipfsHash ? (doc.ipfsHash.length > 42 ? `${doc.ipfsHash.substring(0, 20)}...${doc.ipfsHash.substring(doc.ipfsHash.length - 10)}` : doc.ipfsHash) : 'IPFS hash not set'}
+                                <h4 className="studocu-ipfs-hash" title={fullHashTitle(doc.ipfsHash)}>
+                                    {formatIpfsLabel(doc.ipfsHash)}
                                 </h4>
                                 <div className="studocu-uploader">
                                     <Avatar address={doc.uploader} size={24} />
@@ -130,14 +145,20 @@ export default function Voting(props) {
                                     >
                                         👁️ Preview PDF
                                     </button>
-                                    <a
-                                        href={`https://ipfs.io/ipfs/${doc.ipfsHash}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="btn btn--ghost btn--small"
-                                    >
-                                        📥 Download
-                                    </a>
+                                    {downloadUrl ? (
+                                        <a
+                                            href={downloadUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn btn--ghost btn--small"
+                                        >
+                                            📥 Download
+                                        </a>
+                                    ) : (
+                                        <span className="studocu-meta" style={{ fontSize: '0.8rem' }}>
+                                            Invalid IPFS link
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                             <div className="studocu-vote-actions">
@@ -181,8 +202,8 @@ export default function Voting(props) {
                             <div className="studocu-vote-card studocu-vote-card--completed" key={`completed-${doc.id}`}>
                                 <div className="studocu-vote-card-content">
                                     <span className="eyebrow">Document #{doc.id}</span>
-                                    <h4 className="studocu-ipfs-hash" title={doc.ipfsHash || 'IPFS hash not set'}>
-                                        {doc.ipfsHash ? (doc.ipfsHash.length > 42 ? `${doc.ipfsHash.substring(0, 20)}...${doc.ipfsHash.substring(doc.ipfsHash.length - 10)}` : doc.ipfsHash) : 'IPFS hash not set'}
+                                    <h4 className="studocu-ipfs-hash" title={fullHashTitle(doc.ipfsHash)}>
+                                        {formatIpfsLabel(doc.ipfsHash)}
                                     </h4>
                                     <p className="studocu-meta">Submitted {formatTimestamp(doc.timestamp)}</p>
                                     <div className="studocu-vote-progress">
@@ -274,8 +295,8 @@ export default function Voting(props) {
                                     <div className="studocu-vote-card studocu-vote-card--uploader" key={`my-upload-${doc.id}`}>
                                         <div className="studocu-vote-card-content">
                                             <span className="eyebrow">Document #{doc.id}</span>
-                                            <h4 className="studocu-ipfs-hash" title={doc.ipfsHash || 'IPFS hash not set'}>
-                                                {doc.ipfsHash ? (doc.ipfsHash.length > 42 ? `${doc.ipfsHash.substring(0, 20)}...${doc.ipfsHash.substring(doc.ipfsHash.length - 10)}` : doc.ipfsHash) : 'IPFS hash not set'}
+                                            <h4 className="studocu-ipfs-hash" title={fullHashTitle(doc.ipfsHash)}>
+                                                {formatIpfsLabel(doc.ipfsHash)}
                                             </h4>
                                             <p className="studocu-meta">Submitted {formatTimestamp(doc.timestamp)}</p>
                                             <div className="studocu-vote-progress">
