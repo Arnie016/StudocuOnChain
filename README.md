@@ -65,6 +65,12 @@ flowchart LR
 
 > The diagram lives at `docs/architecture/studocu-onchain-architecture.mmd`. Use `@mermaid-js/mermaid-cli` if you prefer a PNG export.
 
+## Product Screenshots
+
+![StudocuOnChain Interface](screenshots/Interface.png)
+
+![Architecture Diagram](screenshots/Archetchture Diagram.png)
+
 ## Product Highlights
 
 - **Registration** – Wallets join the network by paying `0.01 ETH`.
