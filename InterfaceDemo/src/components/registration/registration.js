@@ -5,8 +5,6 @@ import '../../global.css';
 import { GlobalToolBar } from '../../global';
 import { buildIpfsUrl, shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
 
-const DROPBOX_URL = 'https://www.dropbox.com/scl/fi/7y1ol219sv4ag831c40v3/A0273649N_ArnavSalkade_hw5-2.pdf?rlkey=c5t9ja7eoaxg73xh9t3mce3jx&st=2nn1t1ig&dl=0';
-
 const formatTimestamp = (ts) => {
     if (!ts) {
         return '—';
@@ -78,13 +76,17 @@ export default function Registration(props) {
 
     const [ipfsHash, setIpfsHash] = useState('');
     const [password, setPassword] = useState('');
+    const [externalLink, setExternalLink] = useState('');
     const [flash, setFlash] = useState(null);
     const [accessPreviewInput, setAccessPreviewInput] = useState('');
     const [accessHistory, setAccessHistory] = useState([]);
     const passwordInputRef = useRef(null);
 
-    const openDropboxPreview = () => {
-        window.open(DROPBOX_URL, '_blank', 'noopener');
+    const openExternalLink = (link, hash) => {
+        const target = link || (hash ? buildIpfsUrl(hash) : '');
+        if (target) {
+            window.open(target, '_blank', 'noopener');
+        }
     };
 
     useEffect(() => {
@@ -106,6 +108,7 @@ export default function Registration(props) {
                 docId: lastAccess.docId,
                 password: lastAccess.password,
                 ipfsHash: lastAccess.ipfsHash,
+                externalLink: lastAccess.externalLink,
                 timestamp: lastAccess.timestamp
             };
 
@@ -115,7 +118,7 @@ export default function Registration(props) {
     }, [lastAccess]);
 
     const lowerAddress = address?.toLowerCase?.();
-    const lastAccessDownloadUrl = DROPBOX_URL;
+    const lastAccessDownloadUrl = lastAccess?.externalLink || (lastAccess?.ipfsHash ? buildIpfsUrl(lastAccess.ipfsHash) : '');
 
     const myUploads = useMemo(() => (
         Array.isArray(documents) && lowerAddress
@@ -171,11 +174,17 @@ export default function Registration(props) {
             return;
         }
 
+        if (!externalLink) {
+            setFlash({ type: 'danger', text: 'Please provide an external link (e.g. Dropbox URL).' });
+            return;
+        }
+
         try {
-            await onUpload({ ipfsHash, password });
+            await onUpload({ ipfsHash, password, externalLink });
             setFlash({ type: 'success', text: 'Document uploaded. Five voters will be notified automatically.' });
             setIpfsHash('');
             setPassword('');
+            setExternalLink('');
         } catch (err) {
             setFlash({ type: 'danger', text: err?.message || 'Upload failed.' });
         }
@@ -474,7 +483,7 @@ export default function Registration(props) {
                             <button
                                 className="btn btn--primary"
                                 type="submit"
-                                disabled={!canTransact || !isRegistered || isBusy('upload') || !password || !ipfsHash}
+                                disabled={!canTransact || !isRegistered || isBusy('upload') || !password || !ipfsHash || !externalLink}
                             >
                                 Upload
                             </button>
@@ -501,6 +510,19 @@ export default function Registration(props) {
                         />
                         <p className="studocu-hint-small">
                             The password is required by the contract. It will be stored on-chain and can be accessed by voters after approval.
+                        </p>
+                        <label htmlFor="externalLinkInput">External Link (required)</label>
+                        <input
+                            id="externalLinkInput"
+                            type="url"
+                            placeholder="https://www.dropbox.com/..."
+                            value={externalLink}
+                            onChange={(e) => setExternalLink(e.target.value.trim())}
+                            autoComplete="off"
+                            disabled={isBusy('upload')}
+                        />
+                        <p className="studocu-hint-small">
+                            Provide a direct download link (e.g. Dropbox) that voters can open after approval.
                         </p>
                         <div className="studocu-upload-messages">
                             {!isRegistered && (
@@ -542,12 +564,14 @@ export default function Registration(props) {
                                 <span>Password:</span>
                                 <code>{lastAccess.password}</code>
                             </div>
-                            {lastAccess.ipfsHash && (
+                            {(lastAccess.ipfsHash || lastAccessDownloadUrl) && (
                                 <>
-                                    <div>
-                                        <span>IPFS Hash:</span>
-                                        <code className="studocu-ipfs-hash-small">{lastAccess.ipfsHash}</code>
-                                    </div>
+                                    {lastAccess.ipfsHash && (
+                                        <div>
+                                            <span>IPFS Hash:</span>
+                                            <code className="studocu-ipfs-hash-small">{lastAccess.ipfsHash}</code>
+                                        </div>
+                                    )}
                         <div className="studocu-access-links">
                                         {lastAccessDownloadUrl && (
                                             <a
@@ -570,8 +594,8 @@ export default function Registration(props) {
                                             <button
                                                 type="button"
                                                 className="btn btn--ghost btn--small"
-                                                onClick={openDropboxPreview}
-                                                disabled={!accessPreviewInput}
+                                                onClick={() => openExternalLink(lastAccessDownloadUrl, lastAccess.ipfsHash)}
+                                                disabled={!accessPreviewInput || !lastAccessDownloadUrl}
                                             >
                                                 👁️ Preview
                                             </button>
@@ -600,7 +624,8 @@ export default function Registration(props) {
                                         <button
                                             type="button"
                                             className="btn btn--ghost btn--small"
-                                            onClick={openDropboxPreview}
+                                            onClick={() => openExternalLink(entry.externalLink, entry.ipfsHash)}
+                                            disabled={!entry.externalLink && !entry.ipfsHash}
                                         >
                                             👁️ Preview
                                         </button>

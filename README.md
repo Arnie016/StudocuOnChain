@@ -5,7 +5,7 @@ A decentralized document verification platform where users pay to join, upload p
 ## Features
 
 - **User Registration**: Pay 0.01 ETH to join the network
-- **Document Upload**: Upload documents with 0.005 ETH deposit
+- **Document Upload**: Submit IPFS hash, password, and external download link with a 0.005 ETH deposit
 - **Random Voter Selection**: 5 random voters selected from registered users for each document
 - **Voting Rewards**: Earn 0.02 ETH per vote cast
 - **Quality Control**: 3/5 approval threshold required

@@ -4,9 +4,7 @@ import './Voting.css';
 import '../../global.css';
 import { GlobalToolBar } from '../../global';
 import Avatar from './Avatar';
-import { shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
-
-const DROPBOX_URL = 'https://www.dropbox.com/scl/fi/7y1ol219sv4ag831c40v3/A0273649N_ArnavSalkade_hw5-2.pdf?rlkey=c5t9ja7eoaxg73xh9t3mce3jx&st=2nn1t1ig&dl=0';
+import { buildIpfsUrl, shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
 
 const formatTimestamp = (ts) => {
     if (!ts) {
@@ -148,7 +146,13 @@ export default function Voting(props) {
                                     <button
                                         className="btn btn--ghost btn--small"
                                         type="button"
-                                        onClick={() => window.open(DROPBOX_URL, '_blank', 'noopener')}
+                                        onClick={() => {
+                                            const previewUrl = doc.externalLink || (doc.ipfsHash ? buildIpfsUrl(doc.ipfsHash) : '');
+                                            if (previewUrl) {
+                                                window.open(previewUrl, '_blank', 'noopener');
+                                            }
+                                        }}
+                                        disabled={!(doc.externalLink || doc.ipfsHash)}
                                     >
                                         👁️ Preview PDF
                                     </button>

@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS_STUDOCU = "0xD06C0afb996575CE06508eDFce34e0043f1dF2E6";
+export const CONTRACT_ADDRESS_STUDOCU = "0x0000000000000000000000000000000000000000";
 export const CONTRACT_ABI_STUDOCU = [
 	{
 		"inputs": [],
@@ -319,6 +319,11 @@ export const CONTRACT_ABI_STUDOCU = [
 				"type": "string"
 			},
 			{
+				"internalType": "string",
+				"name": "externalLink",
+				"type": "string"
+			},
+			{
 				"internalType": "uint256",
 				"name": "depositAmount",
 				"type": "uint256"
@@ -365,6 +370,11 @@ export const CONTRACT_ABI_STUDOCU = [
 			{
 				"internalType": "string",
 				"name": "ipfsHash",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "externalLink",
 				"type": "string"
 			},
 			{
@@ -586,6 +596,11 @@ export const CONTRACT_ABI_STUDOCU = [
 			{
 				"internalType": "string",
 				"name": "password",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "externalLink",
 				"type": "string"
 			}
 		],

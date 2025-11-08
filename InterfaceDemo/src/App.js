@@ -477,6 +477,7 @@ export default function App() {
                     id: docId,
                     uploader: base.uploader,
                     ipfsHash: base.ipfsHash,
+                    externalLink: base.externalLink || "",
                     approved: Boolean(base.approved),
                     timestamp: Number(base.timestamp),
                     processComplete,
@@ -546,13 +547,13 @@ export default function App() {
         }
     }, [studocuContract, address, studocuFees, pushHistoryRecord, formatWeiToEth, refreshStudocuSummary, refreshStudocuRegistration]);
 
-    const uploadStudocuDocument = useCallback(async ({ ipfsHash, password }) => {
+    const uploadStudocuDocument = useCallback(async ({ ipfsHash, password, externalLink }) => {
         if (!studocuContract || !address) {
             throw new Error("Connect your wallet before uploading.");
         }
 
-        if (!ipfsHash || !password) {
-            throw new Error("IPFS hash and password are required.");
+        if (!ipfsHash || !password || !externalLink) {
+            throw new Error("IPFS hash, password, and external link are required.");
         }
 
         setStudocuPendingAction("upload");
@@ -564,7 +565,7 @@ export default function App() {
             // Estimate gas and check for errors early (catches revert reasons before sending)
             let gasLimit;
             try {
-                const estimatedGas = await studocuContract.methods.uploadDocument(ipfsHash, password).estimateGas({
+                const estimatedGas = await studocuContract.methods.uploadDocument(ipfsHash, password, externalLink).estimateGas({
                     from: address,
                     value
                 });
@@ -584,7 +585,7 @@ export default function App() {
                 gasLimit = "8000000"; // 8M should be plenty for upload
             }
             
-            const tx = await studocuContract.methods.uploadDocument(ipfsHash, password).send({
+            const tx = await studocuContract.methods.uploadDocument(ipfsHash, password, externalLink).send({
                 from: address,
                 value,
                 gas: gasLimit
@@ -686,6 +687,7 @@ export default function App() {
                 docId,
                 password: password || "Password not available",
                 ipfsHash: doc?.ipfsHash || "",
+                externalLink: doc?.externalLink || "",
                 timestamp: Date.now()
             });
 

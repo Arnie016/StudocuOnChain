@@ -20,6 +20,7 @@ contract StudocuOnChain is Ownable, ReentrancyGuard {
         address uploader;
         string ipfsHash;
         string password;
+        string externalLink;
         uint256 depositAmount;
         address[] voters;
         bool[] votes;
@@ -77,10 +78,11 @@ contract StudocuOnChain is Ownable, ReentrancyGuard {
     }
     
     // Upload document
-    function uploadDocument(string memory ipfsHash, string memory password) external payable onlyRegistered {
+    function uploadDocument(string memory ipfsHash, string memory password, string memory externalLink) external payable onlyRegistered {
         require(msg.value == UPLOAD_DEPOSIT, "Must pay upload deposit");
         require(bytes(ipfsHash).length > 0, "IPFS hash required");
         require(bytes(password).length > 0, "Password required");
+        require(bytes(externalLink).length > 0, "External link required");
         
         // Select 5 random voters
         address[] memory selectedVoters = _selectRandomVoters(msg.sender);
@@ -90,6 +92,7 @@ contract StudocuOnChain is Ownable, ReentrancyGuard {
             uploader: msg.sender,
             ipfsHash: ipfsHash,
             password: password,
+            externalLink: externalLink,
             depositAmount: msg.value,
             voters: selectedVoters,
             votes: new bool[](REQUIRED_VOTERS),
@@ -142,11 +145,12 @@ contract StudocuOnChain is Ownable, ReentrancyGuard {
     function getDocument(uint256 docId) external view validDocument(docId) returns (
         address uploader,
         string memory ipfsHash,
+        string memory externalLink,
         bool approved,
         uint256 timestamp
     ) {
         Document storage doc = documents[docId];
-        return (doc.uploader, doc.ipfsHash, doc.approved, doc.timestamp);
+        return (doc.uploader, doc.ipfsHash, doc.externalLink, doc.approved, doc.timestamp);
     }
 
     // View: time remaining until voting closes (0 if closed)
