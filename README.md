@@ -22,9 +22,11 @@ StudocuOnChain is a decentralized document marketplace where students and review
 
 > To ship to Ethereum mainnet later: redeploy `StudocuOnChain.sol`, verify the new address on the mainnet explorer, and update `InterfaceDemo/src/contracts/studocu_config.js` with the mainnet address + ABI.
 
-## Product Screenshots
+## Product UI
 
 ![StudocuOnChain Interface](screenshots/Interface.png)
+
+## Architecture Diagram
 
 ![Architecture Diagram](screenshots/ArchitectureDiagram.png)
 
