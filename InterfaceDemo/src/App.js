@@ -852,19 +852,6 @@ export default function App() {
 
     useEffect(() => {
         if (!studocuContract) {
-            return undefined;
-        }
-
-        const interval = setInterval(() => {
-            refreshStudocuDocuments();
-            refreshStudocuSummary();
-        }, 15000);
-
-        return () => clearInterval(interval);
-    }, [studocuContract, refreshStudocuDocuments, refreshStudocuSummary]);
-
-    useEffect(() => {
-        if (!studocuContract) {
             setStudocuReady(false);
             setStudocuDocs([]);
             setStudocuRegistered(false);
