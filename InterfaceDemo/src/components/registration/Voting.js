@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import './Voting.css';
 import '../../global.css';
 import { GlobalToolBar } from '../../global';
-import PDFViewer from './PDFViewer';
 import Avatar from './Avatar';
 import { shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
+
+const DROPBOX_URL = 'https://www.dropbox.com/scl/fi/7y1ol219sv4ag831c40v3/A0273649N_ArnavSalkade_hw5-2.pdf?rlkey=c5t9ja7eoaxg73xh9t3mce3jx&st=2nn1t1ig&dl=0';
 
 const formatTimestamp = (ts) => {
     if (!ts) {
@@ -43,8 +44,6 @@ export default function Voting(props) {
         onRefresh,
         address
     } = props;
-
-    const [viewingPDF, setViewingPDF] = useState(null);
 
     const lowerAddress = address?.toLowerCase?.();
 
@@ -148,7 +147,8 @@ export default function Voting(props) {
                                 <div className="studocu-vote-links">
                                     <button
                                         className="btn btn--ghost btn--small"
-                                        onClick={() => setViewingPDF(doc.ipfsHash)}
+                                        type="button"
+                                        onClick={() => window.open(DROPBOX_URL, '_blank', 'noopener')}
                                     >
                                         👁️ Preview PDF
                                     </button>
@@ -319,12 +319,6 @@ export default function Voting(props) {
                     </div>
                 )}
             </section>
-            {viewingPDF && (
-                <PDFViewer
-                    ipfsHash={viewingPDF}
-                    onClose={() => setViewingPDF(null)}
-                />
-            )}
         </div>
     );
 

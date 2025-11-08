@@ -3,11 +3,9 @@ import { Navigate } from 'react-router-dom';
 import './registration.css';
 import '../../global.css';
 import { GlobalToolBar } from '../../global';
-import PDFViewer from './PDFViewer';
 import { buildIpfsUrl, shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
 
-const LOCAL_PREVIEW_PATH = '/demo/A0273649N_ArnavSalkade_hw5 (1).pdf';
-const LOCAL_PREVIEW_URL = `${process.env.PUBLIC_URL || ''}${LOCAL_PREVIEW_PATH}`;
+const DROPBOX_URL = 'https://www.dropbox.com/scl/fi/7y1ol219sv4ag831c40v3/A0273649N_ArnavSalkade_hw5-2.pdf?rlkey=c5t9ja7eoaxg73xh9t3mce3jx&st=2nn1t1ig&dl=0';
 
 const formatTimestamp = (ts) => {
     if (!ts) {
@@ -81,20 +79,12 @@ export default function Registration(props) {
     const [ipfsHash, setIpfsHash] = useState('');
     const [password, setPassword] = useState('');
     const [flash, setFlash] = useState(null);
-    const [viewingPDF, setViewingPDF] = useState(null);
-    const [viewerFallbackUrl, setViewerFallbackUrl] = useState(null);
-    const [viewerPassword, setViewerPassword] = useState(null);
     const [accessPreviewInput, setAccessPreviewInput] = useState('');
     const [accessHistory, setAccessHistory] = useState([]);
     const passwordInputRef = useRef(null);
 
-    const openPdfViewer = (hash, docPassword = null) => {
-        if (!hash) {
-            return;
-        }
-        setViewerPassword(docPassword);
-        setViewingPDF(hash);
-        setViewerFallbackUrl(LOCAL_PREVIEW_URL);
+    const openDropboxPreview = () => {
+        window.open(DROPBOX_URL, '_blank', 'noopener');
     };
 
     useEffect(() => {
@@ -125,7 +115,7 @@ export default function Registration(props) {
     }, [lastAccess]);
 
     const lowerAddress = address?.toLowerCase?.();
-    const lastAccessDownloadUrl = lastAccess?.ipfsHash ? buildIpfsUrl(lastAccess.ipfsHash) : '';
+    const lastAccessDownloadUrl = DROPBOX_URL;
 
     const myUploads = useMemo(() => (
         Array.isArray(documents) && lowerAddress
@@ -580,7 +570,7 @@ export default function Registration(props) {
                                             <button
                                                 type="button"
                                                 className="btn btn--ghost btn--small"
-                                                onClick={() => openPdfViewer(lastAccess.ipfsHash, accessPreviewInput)}
+                                                onClick={openDropboxPreview}
                                                 disabled={!accessPreviewInput}
                                             >
                                                 👁️ Preview
@@ -610,7 +600,7 @@ export default function Registration(props) {
                                         <button
                                             type="button"
                                             className="btn btn--ghost btn--small"
-                                            onClick={() => openPdfViewer(entry.ipfsHash, entry.password)}
+                                            onClick={openDropboxPreview}
                                         >
                                             👁️ Preview
                                         </button>
@@ -622,18 +612,6 @@ export default function Registration(props) {
                     </div>
                 )}
             </section>
-            {viewingPDF && (
-                <PDFViewer
-                    ipfsHash={viewingPDF}
-                    pdfPassword={viewerPassword || undefined}
-                    fallbackUrl={viewerFallbackUrl}
-                    onClose={() => {
-                        setViewingPDF(null);
-                        setViewerPassword(null);
-                        setViewerFallbackUrl(null);
-                    }}
-                />
-            )}
         </div>
     );
 
