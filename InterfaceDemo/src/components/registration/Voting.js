@@ -5,7 +5,7 @@ import '../../global.css';
 import { GlobalToolBar } from '../../global';
 import PDFViewer from './PDFViewer';
 import Avatar from './Avatar';
-import { buildIpfsUrl, shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
+import { shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
 
 const formatTimestamp = (ts) => {
     if (!ts) {
@@ -112,7 +112,6 @@ export default function Voting(props) {
                 awaitingVote.map((doc) => {
                     const progress = doc.votingProgress || { totalVotes: 0, approvals: 0, requiredVoters: 5 };
                     const timeLeft = doc.timeRemaining || 0;
-                    const downloadUrl = buildIpfsUrl(doc.ipfsHash);
                     const formatTimeRemaining = (seconds) => {
                         if (seconds === 0) return 'Voting closed';
                         const days = Math.floor(seconds / 86400);
@@ -153,20 +152,6 @@ export default function Voting(props) {
                                     >
                                         👁️ Preview PDF
                                     </button>
-                                    {downloadUrl ? (
-                                        <a
-                                            href={downloadUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn btn--ghost btn--small"
-                                        >
-                                            📥 Download
-                                        </a>
-                                    ) : (
-                                        <span className="studocu-meta" style={{ fontSize: '0.8rem' }}>
-                                            Invalid IPFS link
-                                        </span>
-                                    )}
                                 </div>
                             </div>
                             <div className="studocu-vote-actions">
