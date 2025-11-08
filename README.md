@@ -26,7 +26,7 @@ StudocuOnChain is a decentralized document marketplace where students and review
 
 ![StudocuOnChain Interface](screenshots/Interface.png)
 
-![Architecture Diagram](screenshots/Archetchture Diagram.png)
+![Architecture Diagram](screenshots/ArchitectureDiagram.png)
 
 ## Product Highlights
 
