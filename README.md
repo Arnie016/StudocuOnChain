@@ -26,7 +26,7 @@ StudocuOnChain is a decentralized document marketplace where students and review
 
 ![StudocuOnChain Interface](screenshots/Interface.png)
 
-![Architecture Diagram](screenshots/Archetchture\ Diagram.png)
+![Architecture Diagram](screenshots/Archetchture Diagram.png)
 
 ## Product Highlights
 
@@ -89,5 +89,4 @@ The repo ships with `vercel.json` to ensure SPA routing works for deep links (al
 
 ## Credits
 
-- Original InterfaceDemo project by Yan Ge (2022–2024): <https://github.com/dududududulu/InterfaceDemo/>
 - StudocuOnChain customization and blockchain integration (2025): Arnav Salkade, Barna Saha, Andrei Radu, Pratyush Singh, and collaborators.
