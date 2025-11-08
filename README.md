@@ -22,54 +22,11 @@ StudocuOnChain is a decentralized document marketplace where students and review
 
 > To ship to Ethereum mainnet later: redeploy `StudocuOnChain.sol`, verify the new address on the mainnet explorer, and update `InterfaceDemo/src/contracts/studocu_config.js` with the mainnet address + ABI.
 
-## Architecture Overview
-
-```mermaid
----
-title: StudocuOnChain Architecture
----
-flowchart LR
-    classDef uploader fill:#2D7FF9,stroke:#0A3D8F,color:#fff
-    classDef voter fill:#8A46FF,stroke:#4A228E,color:#fff
-    classDef contract fill:#FF8B3D,stroke:#B05300,color:#1f1200
-    classDef storage fill:#20B486,stroke:#0f674c,color:#fff
-    classDef reward fill:#F4C542,stroke:#AD7B04,color:#1f1200
-
-    subgraph Uploader Journey
-        A[Register Wallet\n0.01 ETH]:::uploader -->|becomes| B[Eligible Uploader & Voter]:::uploader
-        B -->|Stake 0.005 ETH\n+ submit CID/password/link| C[Upload Document]:::uploader
-    end
-
-    C -->|Stores metadata + escrow| D{{StudocuOnChain Contract}}:::contract
-    D -->|Selects 5 addresses| E[Voter Pool]:::voter
-    E -->|Reviews CID & password| F[Voting Session\nVote Approve/Reject]:::voter
-    F -->|Approve? immediate 0.005 ETH| G[Voter Reward]:::reward
-
-    D -->|>=3 approvals| H[Approved Document]:::storage
-    H -->|Refund 0.005 ETH deposit| B
-
-    subgraph Access Loop
-        I[Reader Pays 0.001 ETH]:::uploader -->|call accessDocument| D
-        D -->|Forward payment instantly| J[Uploader 0.001 ETH per access]:::reward
-        J -.->|Repeat for every access| H
-    end
-
-    D -.->|Stores CID/password| K[(IPFS Gateways\n+ Dropbox fallback)]:::storage
-
-    class A,B,C,I uploader
-    class E,F voter
-    class D contract
-    class H,K storage
-    class G,J reward
-```
-
-> The diagram lives at `docs/architecture/studocu-onchain-architecture.mmd`. Use `@mermaid-js/mermaid-cli` if you prefer a PNG export.
-
 ## Product Screenshots
 
 ![StudocuOnChain Interface](screenshots/Interface.png)
 
-![Architecture Diagram](screenshots/Archetchture Diagram.png)
+![Architecture Diagram](screenshots/Archetchture\ Diagram.png)
 
 ## Product Highlights
 
