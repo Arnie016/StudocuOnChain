@@ -5,8 +5,6 @@ StudocuOnChain is a decentralized document marketplace where students and review
 ## Live Deployments
 
 - Production dApp (Vercel): <https://interface-demo-vert.vercel.app/>
-- Alternate deployment (Vercel preview history): <https://studocu-on-chain.vercel.app/>  
-  *(The `studocu-on-chain` Vercel project serves the same React app and can be promoted with `vercel --prod`.)*
 
 ## Smart Contract (Sepolia)
 
