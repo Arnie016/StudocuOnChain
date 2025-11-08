@@ -18,6 +18,17 @@ const formatTimestamp = (ts) => {
     return date.toLocaleString();
 };
 
+const voteCountClass = (progress) => {
+    const approvals = Number(progress?.approvals || 0);
+    if (approvals >= 3) {
+        return 'studocu-vote-count studocu-vote-count--ready';
+    }
+    if (approvals >= 1) {
+        return 'studocu-vote-count studocu-vote-count--warning';
+    }
+    return 'studocu-vote-count';
+};
+
 export default function Voting(props) {
     const {
         isConnected,
@@ -123,11 +134,8 @@ export default function Voting(props) {
                                 </div>
                                 <p className="studocu-meta">Submitted {formatTimestamp(doc.timestamp)}</p>
                                 <div className="studocu-vote-progress">
-                                    <span className="studocu-vote-count">
-                                        <strong>Votes: {progress.totalVotes}/{progress.requiredVoters}</strong>
-                                    </span>
-                                    <span className="studocu-vote-approvals">
-                                        ({progress.approvals} approvals)
+                                    <span className={voteCountClass(progress)}>
+                                        Votes: {progress.totalVotes}/{progress.requiredVoters}
                                     </span>
                                     {timeLeft > 0 && (
                                         <span className="studocu-vote-time">
@@ -207,11 +215,8 @@ export default function Voting(props) {
                                     </h4>
                                     <p className="studocu-meta">Submitted {formatTimestamp(doc.timestamp)}</p>
                                     <div className="studocu-vote-progress">
-                                        <span className="studocu-vote-count">
-                                            <strong>Votes: {progress.totalVotes}/{progress.requiredVoters}</strong>
-                                        </span>
-                                        <span className="studocu-vote-approvals">
-                                            ({progress.approvals} approvals)
+                                        <span className={voteCountClass(progress)}>
+                                            Votes: {progress.totalVotes}/{progress.requiredVoters}
                                         </span>
                                     </div>
                                     <div className="studocu-vote-status">
@@ -300,11 +305,8 @@ export default function Voting(props) {
                                             </h4>
                                             <p className="studocu-meta">Submitted {formatTimestamp(doc.timestamp)}</p>
                                             <div className="studocu-vote-progress">
-                                                <span className="studocu-vote-count">
-                                                    <strong>Votes: {progress.totalVotes}/{progress.requiredVoters}</strong>
-                                                </span>
-                                                <span className="studocu-vote-approvals">
-                                                    ({progress.approvals} approvals)
+                                                <span className={voteCountClass(progress)}>
+                                                    Votes: {progress.totalVotes}/{progress.requiredVoters}
                                                 </span>
                                                 {timeLeft > 0 && (
                                                     <span className="studocu-vote-time">

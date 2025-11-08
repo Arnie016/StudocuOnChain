@@ -332,8 +332,8 @@ export default function App() {
                 voteReward = await studocuContract.methods.VOTE_REWARD().call();
             } catch (e) {
                 console.warn("Failed to read VOTE_REWARD:", e);
-                // Fallback to known value (0.0001 ETH = 100000000000000 wei)
-                voteReward = "100000000000000";
+                // Fallback to known value (0.001 ETH = 1000000000000000 wei)
+                voteReward = "1000000000000000";
             }
             
             try {
@@ -379,8 +379,8 @@ export default function App() {
                     uploadEth: "0.005",
                     accessWei: "1000000000000000", // 0.001 ETH
                     accessEth: "0.001",
-                    voteRewardWei: "100000000000000", // 0.0001 ETH
-                    voteRewardEth: "0.0001"
+                    voteRewardWei: "1000000000000000", // 0.001 ETH
+                    voteRewardEth: "0.001"
                 });
                 setStudocuStats({ totalDocuments: 0, totalUsers: 0 });
                 setStudocuError(null);

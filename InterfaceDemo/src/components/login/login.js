@@ -38,7 +38,7 @@ export default function Login(props){
                 <div className="split-layout login-layout">
                     <div className="glass-panel login-hero">
                         <p className="eyebrow">Studocu OnChain</p>
-                        <h1>Document review workspace for your blockchain cohort</h1>
+                        <h1 className="studocu-gradient-title">Studocu</h1>
                         <p className="login-subtitle">
                             Connect MetaMask, register as a reviewer, submit password-protected PDFs, and
                             coordinate approvals from one focused control panel.
@@ -66,7 +66,7 @@ export default function Login(props){
                             </a>
                         </div>
                         <div className="login-footer">
-                            <span>Project by Yan Ge, Enrique Cervero &amp; Tristan Philippe</span>
+                            <span>Project by Arnav, Barna, Andrei &amp; Pratyush</span>
                             <div className="login-badges">
                                 <span>Solidity · React · Sepolia</span>
                             </div>

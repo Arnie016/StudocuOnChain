@@ -3,9 +3,9 @@ import { NavLink } from "react-router-dom";
 const navLinks = [
     { path: "/", label: "Login", exact: true },
     { path: "/InterfaceDemo/profile", label: "Profile" },
+    { path: "/InterfaceDemo/register", label: "Upload" },
     { path: "/InterfaceDemo/vote", label: "Vote" },
-    { path: "/InterfaceDemo/history", label: "History" },
-    { path: "/InterfaceDemo/register", label: "Documents" }
+    { path: "/InterfaceDemo/history", label: "History" }
 ];
 
 const shortenAddress = (value) => {
@@ -32,8 +32,7 @@ export const GlobalToolBar = ({
             <div className="global-nav__brand">
                 <div className="global-nav__logo">Ξ</div>
                 <div className="global-nav__meta">
-                    <span>Studocu OnChain dApp</span>
-                    <strong>Document Review</strong>
+                    <strong className="studocu-wordmark">Studocu</strong>
                 </div>
             </div>
             <div className="global-nav__links">

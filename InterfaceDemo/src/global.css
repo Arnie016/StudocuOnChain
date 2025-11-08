@@ -333,6 +333,47 @@ input::placeholder {
     font-weight: 600;
 }
 
+.studocu-wordmark {
+    font-size: 1.05rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: linear-gradient(120deg, #7b5bff 0%, #51f3c3 45%, #3fc8ff 65%, #e29bff 100%);
+    background-size: 220% 220%;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: studocuWordmarkGlow 7s ease-in-out infinite;
+    text-shadow: 0 0 18px rgba(123, 91, 255, 0.55);
+}
+
+.studocu-gradient-title {
+    font-size: clamp(2.4rem, 3.5vw, 3rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: linear-gradient(120deg, #7b5bff 0%, #51f3c3 45%, #3fc8ff 65%, #e29bff 100%);
+    background-size: 220% 220%;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: studocuWordmarkGlow 6s ease-in-out infinite;
+    margin-bottom: 0.75rem;
+}
+
+@keyframes studocuWordmarkGlow {
+    0% {
+        background-position: 0% 50%;
+        text-shadow: 0 0 18px rgba(123, 91, 255, 0.5);
+    }
+    50% {
+        background-position: 100% 50%;
+        text-shadow: 0 0 22px rgba(63, 200, 255, 0.75);
+    }
+    100% {
+        background-position: 0% 50%;
+        text-shadow: 0 0 18px rgba(123, 91, 255, 0.5);
+    }
+}
+
 .global-nav__links {
     display: flex;
     align-items: center;

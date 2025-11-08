@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import './registration.css';
 import '../../global.css';
@@ -32,6 +32,17 @@ const statusLabel = (isRegistered, contractReady) => {
         return 'Contract not configured';
     }
     return isRegistered ? 'Registered' : 'Registration required';
+};
+
+const voteCountClass = (progress) => {
+    const approvals = Number(progress?.approvals || 0);
+    if (approvals >= 3) {
+        return 'studocu-vote-count studocu-vote-count--ready';
+    }
+    if (approvals >= 1) {
+        return 'studocu-vote-count studocu-vote-count--warning';
+    }
+    return 'studocu-vote-count';
 };
 
 const mapFlashVariant = (type) => {
@@ -76,7 +87,6 @@ export default function Registration(props) {
     const [accessPreviewInput, setAccessPreviewInput] = useState('');
     const [accessHistory, setAccessHistory] = useState([]);
     const passwordInputRef = useRef(null);
-    const uploadSectionRef = useRef(null);
 
     const openPdfViewer = (hash, docPassword = null) => {
         if (!hash) {
@@ -85,12 +95,6 @@ export default function Registration(props) {
         setViewerPassword(docPassword);
         setViewingPDF(hash);
         setViewerFallbackUrl(LOCAL_PREVIEW_URL);
-    };
-
-    const openUploadSection = () => {
-        if (uploadSectionRef.current) {
-            uploadSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
     };
 
     useEffect(() => {
@@ -221,12 +225,13 @@ export default function Registration(props) {
 
     const renderDocStatus = (doc) => {
         const progress = doc.votingProgress || { totalVotes: 0, approvals: 0, requiredVoters: 5 };
+        const countClass = voteCountClass(progress);
         if (doc.approved) {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
                     <span className="status-chip status-chip--success">Approved</span>
-                    <span className="studocu-meta" style={{ fontSize: '0.85rem' }}>
-                        {progress.totalVotes}/{progress.requiredVoters} votes ({progress.approvals} approvals)
+                    <span className={countClass}>
+                        Votes: {progress.totalVotes}/{progress.requiredVoters}
                     </span>
                 </div>
             );
@@ -235,8 +240,8 @@ export default function Registration(props) {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
                     <span className="status-chip status-chip--danger">Rejected</span>
-                    <span className="studocu-meta" style={{ fontSize: '0.85rem' }}>
-                        {progress.totalVotes}/{progress.requiredVoters} votes ({progress.approvals} approvals)
+                    <span className={countClass}>
+                        Votes: {progress.totalVotes}/{progress.requiredVoters}
                     </span>
                 </div>
             );
@@ -244,8 +249,8 @@ export default function Registration(props) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
                 <span className="status-chip status-chip--neutral">Pending votes</span>
-                <span className="studocu-meta" style={{ fontSize: '0.85rem' }}>
-                    {progress.totalVotes}/{progress.requiredVoters} votes ({progress.approvals} approvals)
+                <span className={countClass}>
+                    Votes: {progress.totalVotes}/{progress.requiredVoters}
                 </span>
                     </div>
         );
@@ -317,7 +322,7 @@ export default function Registration(props) {
             ) : (
                 approvedDocs.map((doc) => {
                     const progress = doc.votingProgress || { totalVotes: 0, approvals: 0, requiredVoters: 5 };
-                    const downloadUrl = buildIpfsUrl(doc.ipfsHash);
+                    const voteClass = voteCountClass(progress);
                     return (
                     <div className="studocu-approved-card" key={`approved-${doc.id}`}>
                             <div className="studocu-vote-card-content">
@@ -327,31 +332,10 @@ export default function Registration(props) {
                                 </h4>
                                 <p className="studocu-meta">Uploader {doc.uploader ? `${doc.uploader.substring(0, 6)}...${doc.uploader.substring(doc.uploader.length - 4)}` : 'Unknown'}</p>
                                 <div className="studocu-vote-progress" style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-                                    <span className="studocu-vote-count">
-                                        <strong>Votes: {progress.totalVotes}/{progress.requiredVoters}</strong>
-                                    </span>
-                                    <span className="studocu-vote-approvals">
-                                        ({progress.approvals} approvals)
+                                    <span className={voteClass}>
+                                        Votes: {progress.totalVotes}/{progress.requiredVoters}
                                     </span>
                                 </div>
-                                {doc.ipfsHash && (
-                                    <div className="studocu-vote-links">
-                                        {downloadUrl ? (
-                                            <a
-                                                href={downloadUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="btn btn--ghost btn--small"
-                                            >
-                                                📥 Download
-                                            </a>
-                                        ) : (
-                                            <span className="studocu-meta" style={{ fontSize: '0.8rem' }}>
-                                                Invalid IPFS link
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
                         </div>
                         <div className="studocu-approved-actions">
                             <button
@@ -385,13 +369,6 @@ export default function Registration(props) {
                             Upload password-protected PDFs for verification. Voters will be randomly selected to review your documents.
                     </p>
                     </div>
-                    <button
-                        type="button"
-                        className="btn btn--primary studocu-heading-action"
-                        onClick={openUploadSection}
-                    >
-                        ➕ Upload
-                    </button>
                 </div>
 
                 {flash && (
@@ -455,7 +432,7 @@ export default function Registration(props) {
                     </div>
                 </div>
 
-                <div className="glass-panel studocu-upload" ref={uploadSectionRef}>
+                <div className="glass-panel studocu-upload">
                     <div className="studocu-upload-header">
                         <div>
                             <h3>Upload new document</h3>

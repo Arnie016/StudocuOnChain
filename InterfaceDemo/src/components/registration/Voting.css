@@ -77,8 +77,12 @@
     font-weight: 600;
 }
 
-.studocu-vote-approvals {
-    color: var(--text-soft);
+.studocu-vote-count--warning {
+    color: var(--warning);
+}
+
+.studocu-vote-count--ready {
+    color: var(--success);
 }
 
 .studocu-vote-time {

@@ -23,7 +23,7 @@ export default function Profile(props){
                     </p>
                 </div>
 
-                <div className="split-layout profile-layout">
+                <div className="profile-layout">
                     <div className="glass-panel profile-card">
                         <img src={METAMASK} alt="MetaMask" className="profile-logo" />
                         <h3>Active account</h3>
@@ -41,39 +41,10 @@ export default function Profile(props){
                         </div>
                     </div>
 
-                    <div className="glass-panel profile-highlights">
-                        <p className="eyebrow">Quick stats</p>
-                        <div className="card-grid profile-stats">
-                            <div className="profile-stat">
-                                <span>Storage value</span>
-                                <strong>Write + Read</strong>
-                                <p>Jump to the storage panel to push a new uint value in seconds.</p>
-                            </div>
-                            <div className="profile-stat">
-                                <span>History monitor</span>
-                                <strong>Live ledger</strong>
-                                <p>Track the last operations, gas usage and statuses without leaving the page.</p>
-                            </div>
-                            <div className="profile-stat">
-                                <span>Leader election</span>
-                                <strong>Two-player commit</strong>
-                                <p>Commit, reveal and fetch the current leader address with visual cues.</p>
-                            </div>
-                        </div>
-                    </div>
+                    <div />
                 </div>
 
-                <div className="glass-panel profile-next-steps">
-                    <div>
-                        <p className="eyebrow">Next up</p>
-                        <h3>Head to Storage or Leader to start interacting</h3>
-                    </div>
-                    <div className="profile-tags">
-                        <span className="status-chip status-chip--neutral">Storage</span>
-                        <span className="status-chip status-chip--neutral">History</span>
-                        <span className="status-chip status-chip--neutral">Leader</span>
-                    </div>
-                </div>
+                <div />
             </section>
         </div>
     );
