@@ -91,4 +91,4 @@ The repo ships with `vercel.json` to ensure SPA routing works for deep links (al
 
 ## Credits
 
-- StudocuOnChain customization and blockchain integration (2025): Arnav Salkade, Barna Saha, Andrei Radu, Pratyush Singh, and collaborators.
+- StudocuOnChain customization and blockchain integration (2025): Arnav Salkade, Barna Marczali, Andrei-Cristian Tabara, Pratyush Basnet, and collaborators.
