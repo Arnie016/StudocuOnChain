@@ -1,6 +1,6 @@
 # StudocuOnChain
 
-StudocuOnChain is a decentralized document marketplace where students and reviewers collaborate on-chain––based on the popular document-sharing platform Studocu. Uploaders stake ETH, voters review for rewards, and readers pay to unlock approved documents with password-gated previews.
+StudocuOnChain is a decentralized document marketplace where students and reviewers collaborate on-chain–based on the popular document-sharing platform Studocu. Uploaders stake ETH, voters review for rewards, and readers pay to unlock approved documents with password-gated previews.
 
 ## Live Deployments
 
