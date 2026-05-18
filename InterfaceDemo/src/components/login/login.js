@@ -19,12 +19,12 @@ export default function Login(props){
         : 'MetaMask not found';
     const statusBody = (() => {
         if (!hasMetamask) {
-            return 'Install the MetaMask extension to begin interacting with the contracts.';
+            return 'Install MetaMask to sign in as a creator. Uploads, storage, and listings are already backed by the production API.';
         }
         if (isConnecting) {
-            return 'Approve the connection request in your wallet to continue.';
+            return 'Approve the wallet connection and signature request to open the creator workbench.';
         }
-        return `Connect your wallet on ${SUPPORTED_NETWORK.shortName || SUPPORTED_NETWORK.chainName} to upload, review, and unlock notes.`;
+        return `Connect on ${SUPPORTED_NETWORK.shortName || SUPPORTED_NETWORK.chainName} to manage uploads, private files, and creator earnings.`;
     })();
 
     return (
@@ -41,24 +41,23 @@ export default function Login(props){
                     <div className="glass-panel login-hero">
                         <h1 className="studocu-gradient-title">{DAPP_NAME}</h1>
                         <p className="login-subtitle">
-                            A wallet-native marketplace for useful class notes. Register once, upload
-                            password-protected PDFs, review assigned submissions, and unlock approved files from one control panel.
+                            A creator marketplace for study files. Upload privately, price access, track reviews, and build a revenue ledger before the payout contract goes live.
                         </p>
                         <div className="login-flow">
                             <div>
                                 <span>01</span>
-                                <strong>Register</strong>
-                                <p>Join the reviewer pool with the configured contract fee.</p>
+                                <strong>Upload</strong>
+                                <p>Drop PDFs, sheets, images, or course files into private storage.</p>
                             </div>
                             <div>
                                 <span>02</span>
-                                <strong>Upload</strong>
-                                <p>Stake a small deposit and submit an IPFS or fallback link.</p>
+                                <strong>List</strong>
+                                <p>Add course metadata, price the unlock, and send it to review.</p>
                             </div>
                             <div>
                                 <span>03</span>
-                                <strong>Review</strong>
-                                <p>Vote on assigned notes and earn the voter reward.</p>
+                                <strong>Earn</strong>
+                                <p>Confirmed purchases become creator earnings, with wallet payouts next.</p>
                             </div>
                         </div>
                         <div className="login-actions">
@@ -68,7 +67,7 @@ export default function Login(props){
                                 disabled={!hasMetamask || isConnecting}
                             >
                                 <Icon name="wallet" size={18} />
-                                {hasMetamask ? (isConnecting ? 'Connecting...' : 'Connect MetaMask') : 'Install MetaMask first'}
+                            {hasMetamask ? (isConnecting ? 'Connecting...' : 'Connect MetaMask') : 'Install MetaMask first'}
                             </button>
                             <a
                                 className="btn btn--ghost login-doc-btn"
@@ -81,9 +80,9 @@ export default function Login(props){
                             </a>
                         </div>
                         <div className="login-footer">
-                            <span>Production network: {SUPPORTED_NETWORK.chainName}</span>
+                            <span>API, database, and private storage are live on AWS.</span>
                             <div className="login-badges">
-                                <span>Solidity · React · IPFS</span>
+                                <span>React · Postgres · Private object storage</span>
                             </div>
                         </div>
                     </div>
@@ -105,21 +104,21 @@ export default function Login(props){
                             {hasMetamask ?
                                 <p>
                                     {isConnecting
-                                        ? 'Approve the prompt in MetaMask. We will take you to the profile page once connected.'
-                                        : 'Use the connect button to link your browser wallet and continue to the profile page.'}
+                                        ? 'Approve the prompts in MetaMask. The second signature creates the backend session.'
+                                        : 'Connect once to unlock uploads, creator listings, and earnings from the backend.'}
                                 </p> :
                                 <p>
-                                    Refresh this page after installing MetaMask to continue. We recommend Chrome or Brave.
+                                    Refresh this page after installing MetaMask. Chrome and Brave work best for the current wallet flow.
                                 </p>
                             }
                         </div>
-                        <div className="login-status__tip">
-                            {connectError && (
+                        {connectError && (
+                            <div className="login-status__tip">
                                 <div className="status-chip status-chip--danger">
                                     {connectError}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>

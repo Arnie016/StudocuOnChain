@@ -43,3 +43,42 @@ export const verifySiwe = ({ message, signature }) => apiRequest("/auth/verify-s
 });
 
 export const fetchListings = (search = "") => apiRequest(`/listings${search ? `?search=${encodeURIComponent(search)}` : ""}`);
+
+export const fetchCurrentUser = (token) => apiRequest("/me", { token });
+
+export const fetchCreatorListings = (token) => apiRequest("/creator/listings", { token });
+
+export const fetchCreatorEarnings = (token) => apiRequest("/creator/earnings", { token });
+
+export const createListing = (token, input) => apiRequest("/listings", {
+    token,
+    method: "POST",
+    body: input
+});
+
+export const createListingUploadUrl = (token, listingId, contentType) => apiRequest(`/listings/${listingId}/upload-url`, {
+    token,
+    method: "POST",
+    body: { contentType }
+});
+
+export const submitListingForReview = (token, listingId) => apiRequest(`/listings/${listingId}/submit-for-review`, {
+    token,
+    method: "POST"
+});
+
+export const uploadFileToSignedUrl = async ({ uploadUrl, file, contentType }) => {
+    const response = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+            "Content-Type": contentType || file.type || "application/octet-stream"
+        },
+        body: file
+    });
+
+    if (!response.ok) {
+        throw new ApiError(response.status, "File upload failed");
+    }
+
+    return true;
+};

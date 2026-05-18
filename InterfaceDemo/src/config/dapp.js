@@ -1,4 +1,4 @@
-export const DAPP_NAME = process.env.REACT_APP_DAPP_NAME || "Loki Unchained";
+export const DAPP_NAME = process.env.REACT_APP_DAPP_NAME || "Studio Unchained";
 export const DAPP_LEGACY_NAME = "StudocuOnChain";
 
 export const NETWORKS = {

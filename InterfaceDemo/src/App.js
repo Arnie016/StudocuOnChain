@@ -18,6 +18,7 @@ import {
     isSupportedChain,
     resolveNetworkLabel
 } from "./config/dapp";
+import { createAuthNonce, verifySiwe } from "./config/api";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const MAX_DOCUMENTS_TO_LOAD = Number(process.env.REACT_APP_MAX_DOCUMENTS_TO_LOAD || 30);
@@ -57,6 +58,9 @@ export default function App() {
     const [isConnected, setIsConnected] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const [connectError, setConnectError] = useState(null);
+    const [apiToken, setApiToken] = useState(null);
+    const [apiUser, setApiUser] = useState(null);
+    const [apiAuthError, setApiAuthError] = useState(null);
 
 
     const [historyRecord, setHistoryRecord] = useState([]);
@@ -172,6 +176,8 @@ export default function App() {
             setAddress(null);
             setBalance("0");
             setIsConnected(false);
+            setApiToken(null);
+            setApiUser(null);
             navigate("/");
             return;
         }
@@ -239,6 +245,30 @@ export default function App() {
         };
     }, [ethereumProvider, handleAccountsChanged, handleChainChanged]);
 
+    const createSiweSession = useCallback(async ({ account, connectedChainId }) => {
+        if (!account || (!provider && !ethereumProvider)) {
+            return null;
+        }
+
+        const domain = window.location.host;
+        const uri = window.location.origin;
+        const chainIdNumber = typeof connectedChainId === "string"
+            ? parseInt(connectedChainId, 16)
+            : Number(connectedChainId);
+        const { nonce } = await createAuthNonce(account);
+        const issuedAt = new Date().toISOString();
+        const message = `${domain} wants you to sign in with your Ethereum account:\n${account}\n\nSign in to ${SUPPORTED_NETWORK.shortName || "Loki Unchained"} to manage uploads, listings, and creator earnings.\n\nURI: ${uri}\nVersion: 1\nChain ID: ${chainIdNumber || 1}\nNonce: ${nonce}\nIssued At: ${issuedAt}`;
+
+        const sessionProvider = provider || new ethers.BrowserProvider(ethereumProvider);
+        const signer = await sessionProvider.getSigner();
+        const signature = await signer.signMessage(message);
+        const session = await verifySiwe({ message, signature });
+        setApiToken(session.token);
+        setApiUser(session.user);
+        setApiAuthError(null);
+        return session;
+    }, [provider, ethereumProvider]);
+
     const connectWallet = useCallback(async () => {
         if (!ethereumProvider) {
             setHaveMetamask(false);
@@ -257,6 +287,16 @@ export default function App() {
             setChainId(connectedChainId);
             setNetwork(resolveNetworkLabel(connectedChainId));
             setIsConnected(true);
+
+            try {
+                await createSiweSession({ account: accounts[0], connectedChainId });
+            } catch (sessionError) {
+                console.error("Backend wallet session failed", sessionError);
+                setApiToken(null);
+                setApiUser(null);
+                setApiAuthError(sessionError?.message || "Wallet connected, but backend sign-in failed.");
+            }
+
             navigate("/InterfaceDemo/profile");
         } catch (error) {
             console.error("Failed to connect wallet", error);
@@ -265,7 +305,7 @@ export default function App() {
         } finally {
             setIsConnecting(false);
         }
-    }, [ethereumProvider, handleAccountsChanged, navigate]);
+    }, [ethereumProvider, handleAccountsChanged, createSiweSession, navigate]);
 
     const getLeader = useCallback(async () => {
         if (!leaderContract) {
@@ -969,6 +1009,9 @@ export default function App() {
             stats={studocuStats}
             documents={studocuDocs}
             fees={studocuFees}
+            apiToken={apiToken}
+            apiUser={apiUser}
+            apiAuthError={apiAuthError}
             toolbarProps={toolbarProps}
         />
     );
