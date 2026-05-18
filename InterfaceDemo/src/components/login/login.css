@@ -34,6 +34,42 @@
     color: var(--text-soft);
     font-size: 1.05rem;
     margin-top: 0.75rem;
+    max-width: 680px;
+}
+
+.login-flow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+}
+
+.login-flow div {
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.login-flow span {
+    display: block;
+    color: var(--accent-secondary);
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    margin-bottom: 0.4rem;
+}
+
+.login-flow strong {
+    display: block;
+    font-size: 1rem;
+}
+
+.login-flow p {
+    margin-top: 0.35rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
 }
 
 .login-actions {
@@ -89,6 +125,10 @@
 }
 
 @media (max-width: 768px) {
+    .login-flow {
+        grid-template-columns: 1fr;
+    }
+
     .login-actions {
         flex-direction: column;
     }

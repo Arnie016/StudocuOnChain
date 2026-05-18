@@ -134,6 +134,14 @@
     gap: 1rem;
 }
 
+.studocu-upload-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 .studocu-upload-form {
     display: grid;
     gap: 1rem;
@@ -248,6 +256,10 @@
     font-size: 0.9rem;
 }
 
+.studocu-meta--small {
+    font-size: 0.8rem;
+}
+
 .studocu-empty {
     display: flex;
     flex-direction: column;
@@ -315,6 +327,11 @@
     font-size: 0.9rem;
 }
 
+.studocu-vote-progress--compact {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
 .studocu-vote-count {
     color: var(--text);
     font-weight: 600;
@@ -343,6 +360,13 @@
     min-width: 130px;
     display: flex;
     justify-content: flex-end;
+}
+
+.studocu-doc-status {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
 }
 
 .studocu-approved-actions {
@@ -448,6 +472,9 @@
 .studocu-access-history-password {
     font-family: 'Space Grotesk', monospace;
     letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .studocu-ipfs-hash-small {
@@ -484,6 +511,12 @@
         align-items: flex-start;
     }
 
+    .studocu-upload-controls,
+    .studocu-doc-status {
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+
     .studocu-access-password {
         flex-direction: column;
         align-items: stretch;
@@ -500,4 +533,3 @@
         grid-template-columns: 1fr;
     }
 }
-

@@ -1,57 +1,80 @@
-# StudocuOnChain
+# Loki Unchained
 
-StudocuOnChain is a decentralized document marketplace where students and reviewers collaborate on-chain–based on the popular document-sharing platform Studocu. Uploaders stake ETH, voters review for rewards, and readers pay to unlock approved documents with password-gated previews.
+Loki Unchained is an on-chain notes marketplace for uploading, reviewing, and unlocking approved study documents. The current Solidity contract is still named `StudocuOnChain`, but the product-facing app now uses the Loki Unchained brand consistently.
 
-## Live Deployments
+## Live Deployment
 
 - Production dApp (Vercel): <https://interface-demo-vert.vercel.app/>
 
-## Smart Contract (Sepolia)
+## Current Network
 
-- Address: `0xf751BB12227808FD05BdF78917063b876A01F7c9`
+- Supported network: Sepolia (`0xaa36a7`)
+- Contract address: `0xf751BB12227808FD05BdF78917063b876A01F7c9`
 - Explorer: <https://sepolia.etherscan.io/address/0xf751BB12227808FD05BdF78917063b876A01F7c9#code>
-- Name: `StudocuOnChain`
-- Compiler: Solidity `v0.8.30` (optimization disabled, 200 runs)
-- Key constants:
-  - `REGISTRATION_FEE = 0.01 ETH`
-  - `UPLOAD_DEPOSIT = 0.005 ETH` (refunded on approval)
-  - `VOTE_REWARD = 0.005 ETH`
-  - `ACCESS_FEE = 0.001 ETH`
-  - `APPROVAL_THRESHOLD = 3` of `REQUIRED_VOTERS = 5`
-- Event feed shows registrations, uploads, votes, and access payouts in real time.
+- Contract name: `StudocuOnChain`
 
-> To ship to Ethereum mainnet later: redeploy `StudocuOnChain.sol`, verify the new address on the mainnet explorer, and update `InterfaceDemo/src/contracts/studocu_config.js` with the mainnet address + ABI.
+## Sova Testnet
 
-## Product UI
+The interface has first-class wallet metadata for the Sova test network:
 
-![StudocuOnChain Interface](screenshots/Interface.png)
+- Chain ID: `120893` (`0x1d83d`)
+- RPC URL: <https://rpc.testnet.sova.io>
+- Explorer: <https://explorer.testnet.sova.io>
+- Native currency symbol: `SOVA`
 
-## Architecture Diagram
+To run this app on Sova, deploy `StudocuOnChain.sol` and `Leader_election.sol` to Sova, then set:
 
-![Architecture Diagram](screenshots/ArchitectureDiagram.png)
+```bash
+REACT_APP_SUPPORTED_CHAIN_ID=0x1d83d
+REACT_APP_STUDOCU_CONTRACT_ADDRESS=<sova-studocu-contract-address>
+REACT_APP_LEADER_CONTRACT_ADDRESS=<sova-leader-contract-address>
+```
+
+Without Sova deployment addresses, the frontend can add/switch MetaMask to Sova but contract actions should remain pointed at the Sepolia deployment.
+
+Key contract constants:
+
+- `REGISTRATION_FEE = 0.01 ETH`
+- `UPLOAD_DEPOSIT = 0.005 ETH` (refunded on approval)
+- `VOTE_REWARD = 0.005 ETH`
+- `ACCESS_FEE = 0.001 ETH`
+- `APPROVAL_THRESHOLD = 3` of `REQUIRED_VOTERS = 5`
 
 ## Product Highlights
 
-- **Registration** – Wallets join the network by paying `0.01 ETH`.
-- **Uploads** – Submit an IPFS hash, document password, and a reviewer-facing fallback link while staking `0.005 ETH`.
-- **Voting** – Five random voters are assigned; each approval vote immediately earns `0.005 ETH`.
-- **Access Flow** – Readers pay `0.001 ETH` to unlock the password, then preview the PDF in-app (password required) with Dropbox/IPFS fallback links.
-- **History & Analytics** – Upload, vote, and access history is persisted client-side; live updates stream from contract events (no polling).
-- **UI Updates** – Navbar links: Login · Profile · Upload · Vote · History. Vote badges color-code approval counts (yellow for 1–2, green for ≥3).
+- Wallet onboarding with MetaMask detection and unsupported-network guardrails.
+- Registration flow with clear fee/status states.
+- Upload flow for IPFS hashes, document passwords, and fallback document links.
+- Reviewer queue for assigned votes, preview links, and voter rewards.
+- Approved-document access flow with password retrieval and recent access history.
+- Profile dashboard with wallet status, uploads, assigned votes, completed votes, and network stats.
+- CI build check via GitHub Actions.
+
+## Configuration
+
+Copy `InterfaceDemo/.env.example` to `InterfaceDemo/.env.local` for local overrides:
+
+```bash
+REACT_APP_DAPP_NAME=Loki Unchained
+REACT_APP_SUPPORTED_CHAIN_ID=0xaa36a7
+REACT_APP_STUDOCU_CONTRACT_ADDRESS=0xf751BB12227808FD05BdF78917063b876A01F7c9
+REACT_APP_LEADER_CONTRACT_ADDRESS=0x6779a2E6EC961f2C59a677849AD0edacCDb15453
+```
+
+To ship a new production network, redeploy `StudocuOnChain.sol`, verify the address on the target explorer, then update the `REACT_APP_*` deployment values.
 
 ## Repository Layout
 
-```
+```text
 StudocuOnChain/
 ├── InterfaceDemo/          # React dApp + contract sources
 │   ├── src/
-│   │   ├── components/     # UI modules (login, registration, voting, history)
+│   │   ├── components/     # UI modules
+│   │   ├── config/         # dApp/network configuration
 │   │   ├── contracts/      # Solidity + ABI configs
-│   │   └── utils/          # Helpers (avatar, IPFS tools, etc.)
-│   └── package.json
-├── docs/
-│   └── architecture/       # Mermaid diagram + assets for documentation
-└── README.md
+│   │   └── utils/          # Helpers
+├── docs/                   # Architecture assets
+└── .github/workflows/      # CI checks
 ```
 
 ## Local Development
@@ -59,36 +82,24 @@ StudocuOnChain/
 ```bash
 cd InterfaceDemo
 npm install
-npm start           # launches CRA dev server on http://localhost:3000
+npm start
 ```
 
 For production builds:
 
 ```bash
-npm run build       # generates /build
+npm run build
 ```
 
-## Deployment (Vercel)
+## Deployment
 
 ```bash
-# Preview deploy (linked project remembered by Vercel CLI)
 vercel
-
-# Promote the latest build to production
 vercel --prod
-
-# Create a new project with a specific name (e.g., studocuonchain)
-vercel --prod --name studocuonchain
 ```
 
-The repo ships with `vercel.json` to ensure SPA routing works for deep links (all non-static paths rewrite to `index.html`).
+The root `vercel.json` keeps SPA routing working for deep links by rewriting non-static paths to `index.html`.
 
-## Working with the Contract
+## Security Note
 
-- Remix deployment: connect MetaMask, select Sepolia (or target network), compile `StudocuOnChain.sol` with `v0.8.30`, optimization off.
-- Verification: submit the same compiler settings and Solidity source through Etherscan (“Verify and Publish”). The contract is already verified on Sepolia; replicate the process for new networks.
-- Frontend config: update `InterfaceDemo/src/contracts/studocu_config.js` whenever the contract address or ABI changes.
-
-## Credits
-
-- StudocuOnChain customization and blockchain integration (2025): Arnav Salkade, Barna Marczali, Andrei-Cristian Tabara, Pratyush Basnet, and collaborators.
+The current demo contract stores document passwords on-chain. Use disposable document-specific passwords only. A production-grade follow-up should replace this with encrypted off-chain secrets or token-gated key delivery.

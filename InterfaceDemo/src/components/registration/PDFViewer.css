@@ -89,6 +89,17 @@
     margin-top: 0.5rem;
 }
 
+.pdf-error-hint--loading {
+    margin-top: 1rem;
+}
+
+.pdf-inline-link {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    margin-top: 0.5rem;
+    display: inline-block;
+}
+
 .pdf-page {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -112,5 +123,4 @@
         padding: 1rem;
     }
 }
-
 

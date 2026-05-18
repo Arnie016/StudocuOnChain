@@ -2,6 +2,8 @@ import './login.css';
 import '../../global.css';
 import { GlobalToolBar } from '../../global';
 import logo from '../../images/logo.svg';
+import { DAPP_NAME, SUPPORTED_NETWORK } from '../../config/dapp';
+import { Icon } from '../ui/Icon';
 
 export default function Login(props){
     const {
@@ -22,7 +24,7 @@ export default function Login(props){
         if (isConnecting) {
             return 'Approve the connection request in your wallet to continue.';
         }
-        return 'Connect your wallet to unlock the on-chain playground.';
+        return `Connect your wallet on ${SUPPORTED_NETWORK.shortName || SUPPORTED_NETWORK.chainName} to upload, review, and unlock notes.`;
     })();
 
     return (
@@ -37,23 +39,35 @@ export default function Login(props){
             <section className="page-section login-section">
                 <div className="split-layout login-layout">
                     <div className="glass-panel login-hero">
-                        <p className="eyebrow">Studocu OnChain</p>
-                        <h1 className="studocu-gradient-title">Studocu</h1>
+                        <h1 className="studocu-gradient-title">{DAPP_NAME}</h1>
                         <p className="login-subtitle">
-                            Connect MetaMask, register as a reviewer, submit password-protected PDFs, and
-                            coordinate approvals from one focused control panel.
+                            A wallet-native marketplace for useful class notes. Register once, upload
+                            password-protected PDFs, review assigned submissions, and unlock approved files from one control panel.
                         </p>
-                        <ul className="feature-list">
-                            <li>One-click wallet connection with live status updates</li>
-                            <li>Voting dashboards with automatic event refresh and history</li>
-                            <li>Password-gated IPFS preview once access fees are paid</li>
-                        </ul>
+                        <div className="login-flow">
+                            <div>
+                                <span>01</span>
+                                <strong>Register</strong>
+                                <p>Join the reviewer pool with the configured contract fee.</p>
+                            </div>
+                            <div>
+                                <span>02</span>
+                                <strong>Upload</strong>
+                                <p>Stake a small deposit and submit an IPFS or fallback link.</p>
+                            </div>
+                            <div>
+                                <span>03</span>
+                                <strong>Review</strong>
+                                <p>Vote on assigned notes and earn the voter reward.</p>
+                            </div>
+                        </div>
                         <div className="login-actions">
                             <button
                                 className="btn btn--primary"
                                 onClick={connectTo}
                                 disabled={!hasMetamask || isConnecting}
                             >
+                                <Icon name="wallet" size={18} />
                                 {hasMetamask ? (isConnecting ? 'Connecting...' : 'Connect MetaMask') : 'Install MetaMask first'}
                             </button>
                             <a
@@ -62,19 +76,19 @@ export default function Login(props){
                                 target="_blank"
                                 rel="noreferrer"
                             >
+                                <Icon name="download" size={18} />
                                 Download MetaMask
                             </a>
                         </div>
                         <div className="login-footer">
-                            <span>Project by Arnav, Barna, Andrei &amp; Pratyush</span>
+                            <span>Production network: {SUPPORTED_NETWORK.chainName}</span>
                             <div className="login-badges">
-                                <span>Solidity · React · Sepolia</span>
+                                <span>Solidity · React · IPFS</span>
                             </div>
                         </div>
                     </div>
                     <div className="glass-panel login-status">
-                        <img src={logo} className="login-logo" alt="Studocu OnChain" />
-                        <p className="eyebrow">Wallet status</p>
+                        <img src={logo} className="login-logo" alt={DAPP_NAME} />
                         <h2>{statusLabel}</h2>
                         <p>{statusBody}</p>
                         {

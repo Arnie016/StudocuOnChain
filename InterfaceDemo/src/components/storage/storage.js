@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import "./storage.css";
 import "../../global.css";
 import { GlobalToolBar } from "../../global";
+import { Icon } from "../ui/Icon";
 
 const DEMO_PDF_PATH = "/demo/A0273649N_ArnavSalkade_hw5 (1).pdf";
 const DEMO_PDF_URL = `${process.env.PUBLIC_URL || ""}${DEMO_PDF_PATH}`;
@@ -65,7 +66,8 @@ export default function Storage(props){
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                👁️ Preview demo PDF
+                                <Icon name="eye" size={16} />
+                                Preview demo PDF
                             </a>
                         </div>
                         <div className="storage-status">

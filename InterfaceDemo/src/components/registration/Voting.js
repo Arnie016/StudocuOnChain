@@ -5,6 +5,7 @@ import '../../global.css';
 import { GlobalToolBar } from '../../global';
 import Avatar from './Avatar';
 import { buildIpfsUrl, shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
+import { Icon } from '../ui/Icon';
 
 const formatTimestamp = (ts) => {
     if (!ts) {
@@ -32,6 +33,8 @@ export default function Voting(props) {
     const {
         isConnected,
         contractReady,
+        isSupportedNetwork = true,
+        supportedNetworkLabel = 'Sepolia Test Network',
         toolbarProps = {},
         isRegistered,
         fees = {},
@@ -97,8 +100,9 @@ export default function Voting(props) {
     const renderVoterMarquee = () => (
         <div className="studocu-voting">
             {documentsLoading ? (
-                <div className="studocu-empty">
-                    <p>Loading assignments...</p>
+                <div className="skeleton-list" aria-label="Loading voting assignments">
+                    <div className="skeleton-line" />
+                    <div className="skeleton-line" />
                 </div>
             ) : awaitingVote.length === 0 ? (
                 <div className="studocu-empty">
@@ -154,7 +158,8 @@ export default function Voting(props) {
                                         }}
                                         disabled={!(doc.externalLink || doc.ipfsHash)}
                                     >
-                                        👁️ Preview PDF
+                                        <Icon name="eye" size={15} />
+                                        Preview PDF
                                     </button>
                                 </div>
                             </div>
@@ -234,7 +239,7 @@ export default function Voting(props) {
             />
             <section className="page-section voting-section">
                 <div className="section-heading">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                    <div className="voting-heading-row">
                         <div>
                             <p className="eyebrow">Voting Queue</p>
                             <h1>Review and vote on documents</h1>
@@ -249,11 +254,23 @@ export default function Voting(props) {
                                 disabled={documentsLoading}
                                 title="Refresh voting queue"
                             >
-                                🔄 Refresh
+                                <Icon name="refresh" size={15} />
+                                Refresh
                             </button>
                         )}
                     </div>
                 </div>
+
+                {!contractReady && (
+                    <div className="glass-panel studocu-alert">
+                        <h3>{isSupportedNetwork ? 'Contract unavailable' : 'Unsupported network'}</h3>
+                        <p>
+                            {isSupportedNetwork
+                                ? 'The voting contract is not ready. Check the deployment address and reload.'
+                                : `Switch MetaMask to ${supportedNetworkLabel} before voting.`}
+                        </p>
+                    </div>
+                )}
 
                 {!isRegistered && (
                     <div className="glass-panel studocu-alert">
@@ -308,9 +325,15 @@ export default function Voting(props) {
                                             </div>
                                             <div className="studocu-vote-status">
                                                 {doc.approved ? (
-                                                    <span className="status-chip status-chip--success">Approved ✓</span>
+                                                    <span className="status-chip status-chip--success">
+                                                        <Icon name="check" size={15} />
+                                                        Approved
+                                                    </span>
                                                 ) : doc.processComplete ? (
-                                                    <span className="status-chip status-chip--danger">Rejected ✗</span>
+                                                    <span className="status-chip status-chip--danger">
+                                                        <Icon name="x" size={15} />
+                                                        Rejected
+                                                    </span>
                                                 ) : (
                                                     <span className="status-chip status-chip--neutral">Pending votes</span>
                                                 )}
@@ -328,4 +351,3 @@ export default function Voting(props) {
 
     return isConnected ? <VotingPage /> : <Navigate to='/' />;
 }
-

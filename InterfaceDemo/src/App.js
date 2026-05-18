@@ -12,18 +12,15 @@ import Registration from "./components/registration/registration";
 import Voting from "./components/registration/Voting";
 import { CONTRACT_ABI_2, CONTRACT_ADDRESS_2 } from "./contracts/config_2";
 import { CONTRACT_ABI_STUDOCU, CONTRACT_ADDRESS_STUDOCU } from "./contracts/studocu_config";
+import {
+    SUPPORTED_CHAIN_ID,
+    SUPPORTED_NETWORK,
+    isSupportedChain,
+    resolveNetworkLabel
+} from "./config/dapp";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-
-const CHAIN_LABELS = {
-    "0x1": "Ethereum Mainnet",
-    "0x3": "Ropsten Test Network",
-    "0x4": "Rinkeby Test Network",
-    "0x5": "Goerli Test Network",
-    "0xaa36a7": "Sepolia Test Network"
-};
-
-const resolveNetworkLabel = (chainId) => CHAIN_LABELS[chainId] || "Unsupported Network";
+const MAX_DOCUMENTS_TO_LOAD = Number(process.env.REACT_APP_MAX_DOCUMENTS_TO_LOAD || 30);
 
 const isValidAddress = (value) => value && value.toLowerCase() !== ZERO_ADDRESS;
 
@@ -55,6 +52,7 @@ export default function App() {
 
     const [address, setAddress] = useState(null);
     const [network, setNetwork] = useState(null);
+    const [chainId, setChainId] = useState(null);
     const [balance, setBalance] = useState("0");
     const [isConnected, setIsConnected] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
@@ -100,6 +98,7 @@ export default function App() {
     const [studocuLastAccess, setStudocuLastAccess] = useState(null);
 
     const navigate = useNavigate();
+    const isSupportedNetwork = isSupportedChain(chainId);
 
     // Detect injected provider and prefer MetaMask when multiple wallets exist
     useEffect(() => {
@@ -118,16 +117,26 @@ export default function App() {
         if (!ethereumProvider) {
             setProvider(null);
             setWeb3(null);
+            setChainId(null);
+            setNetwork(null);
             return;
         }
 
-        setProvider(new ethers.providers.Web3Provider(ethereumProvider, "any"));
+        setProvider(new ethers.BrowserProvider(ethereumProvider));
         setWeb3(new Web3(ethereumProvider));
+        ethereumProvider.request?.({ method: "eth_chainId" })
+            .then((detectedChainId) => {
+                setChainId(detectedChainId);
+                setNetwork(resolveNetworkLabel(detectedChainId));
+            })
+            .catch((err) => {
+                console.warn("Unable to detect current chain", err);
+            });
     }, [ethereumProvider]);
 
-    // Build contract instances once web3 is ready
+    // Build contract instances only on the configured network.
     useEffect(() => {
-        if (!web3) {
+        if (!web3 || !isSupportedChain(chainId)) {
             setLeaderContract(null);
             setStudocuContract(null);
             setStudocuReady(false);
@@ -144,7 +153,7 @@ export default function App() {
             setStudocuContract(null);
             setStudocuReady(false);
         }
-    }, [web3]);
+    }, [web3, chainId]);
 
     const refreshBalance = useCallback(async (account) => {
         if (!provider || !account) {
@@ -152,7 +161,7 @@ export default function App() {
         }
         try {
             const balanceVal = await provider.getBalance(account);
-            setBalance(ethers.utils.formatEther(balanceVal));
+            setBalance(ethers.formatEther(balanceVal));
         } catch (err) {
             console.error("Failed to refresh balance", err);
         }
@@ -174,13 +183,46 @@ export default function App() {
     }, [navigate, refreshBalance]);
 
     const handleChainChanged = useCallback(async (chainId) => {
+        setChainId(chainId);
         setNetwork(resolveNetworkLabel(chainId));
         if (ethereumProvider) {
-            setProvider(new ethers.providers.Web3Provider(ethereumProvider, "any"));
+            setProvider(new ethers.BrowserProvider(ethereumProvider));
             setWeb3(new Web3(ethereumProvider));
         }
         await refreshBalance(address);
     }, [address, ethereumProvider, refreshBalance]);
+
+    const switchToSupportedNetwork = useCallback(async () => {
+        if (!ethereumProvider) {
+            setHaveMetamask(false);
+            setConnectError("MetaMask is not installed");
+            return;
+        }
+
+        setConnectError(null);
+        try {
+            await ethereumProvider.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: SUPPORTED_CHAIN_ID }]
+            });
+        } catch (error) {
+            if (error?.code === 4902 && SUPPORTED_NETWORK?.rpcUrls?.length) {
+                await ethereumProvider.request({
+                    method: "wallet_addEthereumChain",
+                    params: [{
+                        chainId: SUPPORTED_NETWORK.chainId,
+                        chainName: SUPPORTED_NETWORK.chainName,
+                        nativeCurrency: SUPPORTED_NETWORK.nativeCurrency,
+                        rpcUrls: SUPPORTED_NETWORK.rpcUrls,
+                        blockExplorerUrls: SUPPORTED_NETWORK.blockExplorerUrls
+                    }]
+                });
+                return;
+            }
+            console.error("Failed to switch network", error);
+            setConnectError(error?.message || `Switch MetaMask to ${SUPPORTED_NETWORK.chainName}`);
+        }
+    }, [ethereumProvider]);
 
     // Subscribe to MetaMask events
     useEffect(() => {
@@ -209,10 +251,11 @@ export default function App() {
 
         try {
             const accounts = await ethereumProvider.request({ method: "eth_requestAccounts" });
-            const chainId = await ethereumProvider.request({ method: "eth_chainId" });
+            const connectedChainId = await ethereumProvider.request({ method: "eth_chainId" });
 
             await handleAccountsChanged(accounts);
-            setNetwork(resolveNetworkLabel(chainId));
+            setChainId(connectedChainId);
+            setNetwork(resolveNetworkLabel(connectedChainId));
             setIsConnected(true);
             navigate("/InterfaceDemo/profile");
         } catch (error) {
@@ -275,7 +318,7 @@ export default function App() {
             return "0";
         }
         try {
-            return ethers.utils.formatEther(value.toString());
+            return ethers.formatEther(value.toString());
         } catch (err) {
             if (web3?.utils?.fromWei) {
                 return web3.utils.fromWei(value.toString(), "ether");
@@ -423,7 +466,14 @@ export default function App() {
         try {
             const totalDocumentsRaw = await studocuContract.methods.totalDocuments().call();
             const totalDocuments = Number(totalDocumentsRaw);
-            const docIndices = Array.from({ length: totalDocuments }, (_, idx) => idx);
+            const maxDocs = Number.isFinite(MAX_DOCUMENTS_TO_LOAD) && MAX_DOCUMENTS_TO_LOAD > 0
+                ? MAX_DOCUMENTS_TO_LOAD
+                : 30;
+            const startIndex = Math.max(0, totalDocuments - maxDocs);
+            const docIndices = Array.from(
+                { length: totalDocuments - startIndex },
+                (_, idx) => startIndex + idx
+            ).reverse();
 
             const docs = await Promise.all(docIndices.map(async (docId) => {
                 const base = await studocuContract.methods.getDocument(docId).call();
@@ -888,7 +938,11 @@ export default function App() {
         isConnected,
         address,
         network,
+        chainId,
+        isSupportedNetwork,
+        supportedNetworkLabel: SUPPORTED_NETWORK.chainName,
         onConnect: connectWallet,
+        onSwitchNetwork: switchToSupportedNetwork,
         isConnecting,
         hasMetamask: haveMetamask
     };
@@ -908,7 +962,13 @@ export default function App() {
             isConnected={isConnected}
             address={address}
             networkType={network}
+            chainId={chainId}
+            isSupportedNetwork={isSupportedNetwork}
             balance={balance}
+            isRegistered={studocuRegistered}
+            stats={studocuStats}
+            documents={studocuDocs}
+            fees={studocuFees}
             toolbarProps={toolbarProps}
         />
     );
@@ -945,7 +1005,9 @@ export default function App() {
     const RegistrationDisplay = () => (
         <Registration
             isConnected={isConnected}
-            contractReady={studocuReady}
+            contractReady={studocuReady && isSupportedNetwork}
+            isSupportedNetwork={isSupportedNetwork}
+            supportedNetworkLabel={SUPPORTED_NETWORK.chainName}
             toolbarProps={toolbarProps}
             isRegistered={studocuRegistered}
             fees={studocuFees}
@@ -966,7 +1028,9 @@ export default function App() {
     const VotingDisplay = () => (
         <Voting
             isConnected={isConnected}
-            contractReady={studocuReady}
+            contractReady={studocuReady && isSupportedNetwork}
+            isSupportedNetwork={isSupportedNetwork}
+            supportedNetworkLabel={SUPPORTED_NETWORK.chainName}
             toolbarProps={toolbarProps}
             isRegistered={studocuRegistered}
             fees={studocuFees}

@@ -12,7 +12,7 @@ export default function History(props){
     const latestRecords = filteredRecords.slice(-displayNum).reverse();
 
     const statusMap = {
-        1: { label: 'Approved', className: 'status-chip--success' },
+        1: { label: 'Confirmed', className: 'status-chip--success' },
         0: { label: 'Invalid', className: 'status-chip--pending' },
         2: { label: 'Rejected', className: 'status-chip--danger' }
     };
@@ -44,7 +44,7 @@ export default function History(props){
                     <p className="eyebrow">Recent activity</p>
                     <h1>Live view of your contract operations</h1>
                     <p className="history-subtitle">
-                        Track the latest {displayNum} interactions including gas usage, stored values and approval status.
+                        Track the latest {displayNum} wallet interactions including registrations, uploads, votes, access requests and gas usage.
                     </p>
                 </div>
 
@@ -62,7 +62,7 @@ export default function History(props){
                             latestRecords.length === 0 ?
                             <div className="history-empty">
                                 <p>No operations yet.</p>
-                                <span>Store a value or run a leader action to populate the feed.</span>
+                                <span>Register, upload, vote, or access a document to populate the feed.</span>
                             </div> :
                             latestRecords.map((record) => (
                                 <div className="history-row" key={`${record.id}-${record.operation}`}>

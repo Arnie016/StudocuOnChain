@@ -14,6 +14,13 @@
     margin-top: 0.75rem;
 }
 
+.voting-heading-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
 .voting-queue {
     display: flex;
     flex-direction: column;
@@ -156,3 +163,8 @@
     color: var(--text-soft);
 }
 
+@media (max-width: 720px) {
+    .voting-heading-row {
+        flex-direction: column;
+    }
+}

@@ -138,7 +138,7 @@ export default function PDFViewer({ ipfsHash, onClose, pdfPassword, fallbackUrl 
                     {loading && (
                         <div className="pdf-loading">
                             <p>Loading PDF from {currentSource?.name || 'gateway'}...</p>
-                            <p className="pdf-error-hint" style={{ marginTop: '1rem', fontSize: '0.85rem' }}>
+                            <p className="pdf-error-hint pdf-error-hint--loading">
                                 If this takes too long, the file may not be accessible via this gateway.
                                 <br />
                                 {defaultDownloadUrl && (
@@ -146,7 +146,7 @@ export default function PDFViewer({ ipfsHash, onClose, pdfPassword, fallbackUrl 
                                         href={defaultDownloadUrl}
                                         target="_blank" 
                                         rel="noopener noreferrer" 
-                                        style={{ color: 'var(--accent-primary)', textDecoration: 'underline', marginTop: '0.5rem', display: 'inline-block' }}
+                                        className="pdf-inline-link"
                                     >
                                         Try opening in new tab instead
                                     </a>
@@ -234,4 +234,3 @@ export default function PDFViewer({ ipfsHash, onClose, pdfPassword, fallbackUrl 
         </div>
     );
 }
-

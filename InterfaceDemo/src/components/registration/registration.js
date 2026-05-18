@@ -4,6 +4,8 @@ import './registration.css';
 import '../../global.css';
 import { GlobalToolBar } from '../../global';
 import { buildIpfsUrl, shortIpfsHash, normalizeIpfsInput } from '../../utils/ipfs';
+import { DAPP_NAME } from '../../config/dapp';
+import { Icon } from '../ui/Icon';
 
 const formatTimestamp = (ts) => {
     if (!ts) {
@@ -58,6 +60,8 @@ export default function Registration(props) {
     const {
         isConnected,
         contractReady,
+        isSupportedNetwork = true,
+        supportedNetworkLabel = 'Sepolia Test Network',
         toolbarProps = {},
         isRegistered,
         fees = {},
@@ -227,7 +231,7 @@ export default function Registration(props) {
         const countClass = voteCountClass(progress);
         if (doc.approved) {
             return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
+                <div className="studocu-doc-status">
                     <span className="status-chip status-chip--success">Approved</span>
                     <span className={countClass}>
                         Votes: {progress.totalVotes}/{progress.requiredVoters}
@@ -237,7 +241,7 @@ export default function Registration(props) {
         }
         if (doc.processComplete) {
             return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
+                <div className="studocu-doc-status">
                     <span className="status-chip status-chip--danger">Rejected</span>
                     <span className={countClass}>
                         Votes: {progress.totalVotes}/{progress.requiredVoters}
@@ -246,7 +250,7 @@ export default function Registration(props) {
             );
         }
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
+            <div className="studocu-doc-status">
                 <span className="status-chip status-chip--neutral">Pending votes</span>
                 <span className={countClass}>
                     Votes: {progress.totalVotes}/{progress.requiredVoters}
@@ -259,8 +263,9 @@ export default function Registration(props) {
     const renderMyUploads = () => (
         <div className="studocu-myuploads">
             {documentsLoading ? (
-                <div className="studocu-empty">
-                    <p>Syncing your uploads...</p>
+                <div className="skeleton-list" aria-label="Syncing your uploads">
+                    <div className="skeleton-line" />
+                    <div className="skeleton-line" />
                 </div>
             ) : myUploads.length === 0 ? (
                 <div className="studocu-empty">
@@ -287,10 +292,11 @@ export default function Registration(props) {
                                             rel="noopener noreferrer"
                                             className="btn btn--ghost btn--small"
                                         >
-                                            📥 Download
+                                            <Icon name="download" size={15} />
+                                            Download
                                         </a>
                                     ) : (
-                                        <span className="studocu-meta" style={{ fontSize: '0.8rem' }}>
+                                        <span className="studocu-meta studocu-meta--small">
                                             Invalid IPFS link
                                         </span>
                                     )}
@@ -310,8 +316,9 @@ export default function Registration(props) {
     const renderApprovedDocs = () => (
         <div className="studocu-approved">
             {documentsLoading ? (
-                <div className="studocu-empty">
-                    <p>Checking approved documents...</p>
+                <div className="skeleton-list" aria-label="Checking approved documents">
+                    <div className="skeleton-line" />
+                    <div className="skeleton-line" />
                 </div>
             ) : approvedDocs.length === 0 ? (
                 <div className="studocu-empty">
@@ -330,7 +337,7 @@ export default function Registration(props) {
                                     {formatIpfsLabel(doc.ipfsHash)}
                                 </h4>
                                 <p className="studocu-meta">Uploader {doc.uploader ? `${doc.uploader.substring(0, 6)}...${doc.uploader.substring(doc.uploader.length - 4)}` : 'Unknown'}</p>
-                                <div className="studocu-vote-progress" style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                                <div className="studocu-vote-progress studocu-vote-progress--compact">
                                     <span className={voteClass}>
                                         Votes: {progress.totalVotes}/{progress.requiredVoters}
                                     </span>
@@ -362,7 +369,7 @@ export default function Registration(props) {
             <section className="page-section studocu-section">
                 <div className="section-heading studocu-heading">
                     <div>
-                    <p className="eyebrow">Studocu OnChain</p>
+                    <p className="eyebrow">{DAPP_NAME}</p>
                         <h1>Upload and manage documents</h1>
                     <p className="registration-subtitle">
                             Upload password-protected PDFs for verification. Voters will be randomly selected to review your documents.
@@ -384,10 +391,11 @@ export default function Registration(props) {
 
                 {!contractReady && (
                     <div className="glass-panel studocu-alert">
-                        <h3>Contract address not configured</h3>
+                        <h3>{isSupportedNetwork ? 'Contract address not configured' : 'Unsupported network'}</h3>
                         <p>
-                            Update <code>CONTRACT_ADDRESS_STUDOCU</code> in <code>src/contracts/studocu_config.js</code> to point to your deployed StudocuOnChain contract.
-                            All actions remain disabled until a valid address is supplied.
+                            {isSupportedNetwork
+                                ? <>Update <code>REACT_APP_STUDOCU_CONTRACT_ADDRESS</code> or <code>src/contracts/studocu_config.js</code> to point to your deployed contract.</>
+                                : <>Switch MetaMask to {supportedNetworkLabel}. Contract actions remain disabled on other networks.</>}
                         </p>
                     </div>
                 )}
@@ -409,7 +417,7 @@ export default function Registration(props) {
                     </div>
 
                     <div className="glass-panel studocu-card studocu-stats-card">
-                        <h3>Network Stats</h3>
+                        <h3>Network stats</h3>
                         <ul className="studocu-stats-compact">
                             <li>
                                 <span>Registered users</span>
@@ -439,7 +447,7 @@ export default function Registration(props) {
                                 Deposit {uploadFeeLabel}. Funds return automatically once the document reaches the approval quorum.
                             </p>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div className="studocu-upload-controls">
                         <span className="status-chip status-chip--neutral">
                             {pendingDocs.length} pending · {approvedDocs.length} approved
                         </span>
@@ -450,7 +458,8 @@ export default function Registration(props) {
                                     disabled={documentsLoading}
                                     title="Refresh data"
                                 >
-                                    🔄 Refresh
+                                    <Icon name="refresh" size={15} />
+                                    Refresh
                                 </button>
                             )}
                         </div>
@@ -509,7 +518,7 @@ export default function Registration(props) {
                             autoComplete="off"
                         />
                         <p className="studocu-hint-small">
-                            The password is required by the contract. It will be stored on-chain and can be accessed by voters after approval.
+                            Use a disposable document password. This demo contract stores the password on-chain, so do not reuse sensitive credentials.
                         </p>
                         <label htmlFor="externalLinkInput">External Link (required)</label>
                         <input
@@ -532,7 +541,8 @@ export default function Registration(props) {
                             )}
                             {isBusy('upload') && (
                                 <span className="status-chip status-chip--pending">
-                                    ⏳ Transaction pending... Waiting for confirmation
+                                    <Icon name="clock" size={15} />
+                                    Transaction pending
                                 </span>
                             )}
                             {!isBusy('upload') && isRegistered && canTransact && (
@@ -580,7 +590,8 @@ export default function Registration(props) {
                                                 rel="noopener noreferrer"
                                                 className="btn btn--ghost btn--small"
                                             >
-                                                📥 Download PDF
+                                                <Icon name="download" size={15} />
+                                                Download PDF
                                             </a>
                                         )}
                                         <div className="studocu-access-password">
@@ -597,7 +608,8 @@ export default function Registration(props) {
                                                 onClick={() => openExternalLink(lastAccessDownloadUrl, lastAccess.ipfsHash)}
                                                 disabled={!accessPreviewInput || !lastAccessDownloadUrl}
                                             >
-                                                👁️ Preview
+                                                <Icon name="eye" size={15} />
+                                                Preview
                                             </button>
                                         </div>
                                     </div>
@@ -627,9 +639,13 @@ export default function Registration(props) {
                                             onClick={() => openExternalLink(entry.externalLink, entry.ipfsHash)}
                                             disabled={!entry.externalLink && !entry.ipfsHash}
                                         >
-                                            👁️ Preview
+                                            <Icon name="eye" size={15} />
+                                            Preview
                                         </button>
-                                        <span className="studocu-access-history-password">🔐 {entry.password}</span>
+                                        <span className="studocu-access-history-password">
+                                            <Icon name="lock" size={15} />
+                                            {entry.password}
+                                        </span>
                                     </div>
                                 </li>
                             ))}

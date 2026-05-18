@@ -4,13 +4,11 @@ import './Avatar.css';
 
 export default function Avatar({ address, size = 40, className = '' }) {
     const avatarUrl = generateAvatar(address, size);
+    const sizeClass = size <= 24 ? 'avatar--small' : size >= 64 ? 'avatar--large' : 'avatar--medium';
     
     if (!avatarUrl) {
         return (
-            <div 
-                className={`avatar avatar--placeholder ${className}`}
-                style={{ width: size, height: size }}
-            >
+            <div className={`avatar avatar--placeholder ${sizeClass} ${className}`}>
                 ?
             </div>
         );
@@ -20,8 +18,7 @@ export default function Avatar({ address, size = 40, className = '' }) {
         <img
             src={avatarUrl}
             alt={`Avatar for ${address}`}
-            className={`avatar ${className}`}
-            style={{ width: size, height: size }}
+            className={`avatar ${sizeClass} ${className}`}
             onError={(e) => {
                 // Fallback to placeholder on error
                 e.target.style.display = 'none';
@@ -30,5 +27,4 @@ export default function Avatar({ address, size = 40, className = '' }) {
         />
     );
 }
-
 
